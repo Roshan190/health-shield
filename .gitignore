@@ -31,7 +31,11 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+
+# Local personal docs / sample PDFs (may contain real PII — never commit)
+/pdf/
 
 # typescript
 *.tsbuildinfo

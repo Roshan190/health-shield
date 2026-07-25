@@ -1,0 +1,30 @@
+---
+description: Always-on HealthShield context, phase order, and correction duty
+alwaysApply: true
+---
+
+# HealthShield core
+
+Read before acting: `docs/PROGRESS.md`, then `docs/ROADMAP.md`. Locked choices: `docs/DECISIONS.md`.
+
+## Phase discipline
+
+- Current work must match `PROGRESS.md`.
+- Do not implement Phase 2+ features during Phase 0/1.
+- Blueprint ≠ permission to build everything now.
+
+## Correction duty
+
+If the user asks for something wrong (premature AI/claims/doctor portal, mock-forever health data, skipping research notes, monorepo theater, diagnosis claims):
+
+1. Correct them clearly.
+2. Cite the doc (`ROADMAP`, `DECISIONS`, vision principles).
+3. State the allowed next step.
+
+## Docs hygiene
+
+After meaningful progress, update `docs/PROGRESS.md`. New irreversible decisions → `docs/DECISIONS.md`.
+
+## Expo
+
+Use SDK 57 docs only: https://docs.expo.dev/versions/v57.0.0/

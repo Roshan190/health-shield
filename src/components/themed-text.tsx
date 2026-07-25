@@ -4,7 +4,20 @@ import { Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?:
+    | 'default'
+    | 'title'
+    | 'subtitle'
+    | 'heading'
+    | 'section'
+    | 'stat'
+    | 'small'
+    | 'smallBold'
+    | 'caption'
+    | 'label'
+    | 'link'
+    | 'linkPrimary'
+    | 'code';
   themeColor?: ThemeColor;
 };
 
@@ -17,11 +30,16 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
         { color: theme[themeColor ?? 'text'] },
         type === 'default' && styles.default,
         type === 'title' && styles.title,
+        type === 'subtitle' && styles.subtitle,
+        type === 'heading' && styles.heading,
+        type === 'section' && styles.section,
+        type === 'stat' && styles.stat,
         type === 'small' && styles.small,
         type === 'smallBold' && styles.smallBold,
-        type === 'subtitle' && styles.subtitle,
+        type === 'caption' && styles.caption,
+        type === 'label' && styles.label,
         type === 'link' && styles.link,
-        type === 'linkPrimary' && styles.linkPrimary,
+        type === 'linkPrimary' && [styles.linkPrimary, { color: theme.primary }],
         type === 'code' && styles.code,
         style,
       ]}
@@ -31,6 +49,46 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 }
 
 const styles = StyleSheet.create({
+  /** Large display heading — hero banners. */
+  title: {
+    fontSize: 34,
+    fontWeight: 800,
+    lineHeight: 40,
+    letterSpacing: -0.6,
+  },
+  /** Screen title. */
+  subtitle: {
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: 700,
+    letterSpacing: -0.4,
+  },
+  /** Card / hero secondary heading. */
+  heading: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: 700,
+    letterSpacing: -0.3,
+  },
+  /** Section titles between card groups. */
+  section: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: 700,
+    letterSpacing: -0.2,
+  },
+  /** Big numeric stat. */
+  stat: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: 800,
+    letterSpacing: -0.4,
+  },
+  default: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: 500,
+  },
   small: {
     fontSize: 14,
     lineHeight: 20,
@@ -41,20 +99,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: 700,
   },
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
+  /** Fine print / metadata. */
+  caption: {
+    fontSize: 12,
+    lineHeight: 17,
     fontWeight: 500,
   },
-  title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
-  },
-  subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
+  /** Uppercase micro-label above values. */
+  label: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: 700,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   link: {
     lineHeight: 30,
@@ -63,7 +120,6 @@ const styles = StyleSheet.create({
   linkPrimary: {
     lineHeight: 30,
     fontSize: 14,
-    color: '#3c87f7',
   },
   code: {
     fontFamily: Fonts.mono,

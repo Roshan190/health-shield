@@ -1,0 +1,15 @@
+---
+description: Expo and React Native coding conventions for this repo
+globs: src/**/*.{ts,tsx},app/**/*.{ts,tsx},*.{ts,tsx}
+alwaysApply: false
+---
+
+# App code conventions
+
+- Path alias `@/` as already configured; match existing file layout under `src/`.
+- Expo Router file-based routes under `src/app/`.
+- Prefer existing stacks: NativeWind, Zustand, Zod, RHF.
+- Server/async data: TanStack Query once Supabase is wired; avoid ad-hoc fetch soup.
+- Do not add OCR/AI SDKs or insurer SDKs before the roadmap says so.
+- Keep components focused; no drive-by refactors outside the task.
+- Verify APIs against Expo SDK 57 docs before using new modules.

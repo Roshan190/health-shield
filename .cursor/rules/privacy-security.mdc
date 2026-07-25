@@ -1,0 +1,13 @@
+---
+description: Privacy, security, and health-data handling rules
+alwaysApply: true
+---
+
+# Privacy & security
+
+- No secrets, API keys, or service-role keys in git.
+- No real patient/health PII in fixtures, screenshots committed to repo, or logs.
+- Prefer least-privilege access; family data needs explicit permission model.
+- Product copy must not diagnose or promise medical outcomes.
+- Account deletion / data export are product requirements, not afterthoughts (DPDP).
+- Client-only storage of sensitive health records is not an acceptable Foundation architecture.
