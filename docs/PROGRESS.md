@@ -50,7 +50,7 @@ Agents: read this file at the start of every session. Update it when phase/slice
 
 - Slice **1.5**: Emergency card screen (`/profile/emergency`) with offline AsyncStorage snapshot; local renewal reminders via `expo-notifications` (30d / 7d / day-of, synced from Home); Profile **Export my data** + **Delete account** (`delete_own_account` RPC, D-009). Migration `20260725140000_delete_own_account.sql` applied remotely.
 - **Identity card polish**: full-bleed brand gradient, watermark shield, glass avatar ring, blood group / DOB chips.
-- **Android upload fix**: root cause was legacy `readAsStringAsync` rejecting non-`file://` Android URIs (often `content://`). Shared `readLocalUriAsArrayBuffer` uses SDK 57 `File.arrayBuffer()` with cache-copy fallback for policies + records uploads.
+- **Android upload fix (v2)**: `copyAsync` / FileSystem reads fail with “isn't readable” on Expo Android even for cache URIs. Fix: read bytes **immediately at pick** via XHR `arraybuffer` (fetch/File API fallbacks), store `bytes` on the picked asset, upload from memory — no late re-read of the URI.
 
 ### 2026-07-25
 
