@@ -11,6 +11,7 @@ import { ensureNotificationHandler } from '@/lib/notifications/renewals';
 import { useThemeStore } from '@/lib/theme/theme-store';
 
 SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({ duration: 450, fade: true });
 
 function RootNavigator() {
   const themeName = useThemeName();

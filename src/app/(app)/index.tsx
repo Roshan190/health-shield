@@ -24,6 +24,9 @@ import {
 } from '@/constants/theme';
 import { useGradients, useTheme } from '@/hooks/use-theme';
 import { useSessionStore } from '@/lib/auth/session-store';
+import { findNextDose, nextDoseLabel } from '@/lib/medications/next-dose';
+import { syncMedicationNotifications } from '@/lib/notifications/medications';
+import { syncRenewalNotifications } from '@/lib/notifications/renewals';
 import {
   formatInrCompact,
   isRenewalSoon,
@@ -32,9 +35,10 @@ import {
   renewalTone,
 } from '@/lib/policies/format';
 import { policyVisual, RENEWAL_TONE_TINT } from '@/lib/policies/visuals';
-import { syncRenewalNotifications } from '@/lib/notifications/renewals';
 import { getSupabase } from '@/lib/supabase/client';
-import type { Policy } from '@/lib/supabase/database.types';
+import type { Medication, Policy, Vital } from '@/lib/supabase/database.types';
+import { formatVitalValue, formatVitalWhen, vitalTypeLabel } from '@/lib/vitals/format';
+import { vitalVisual } from '@/lib/vitals/visuals';
 
 function greetingForNow() {
   const hour = new Date().getHours();
@@ -71,6 +75,8 @@ export default function HomeScreen() {
   const user = useSessionStore((s) => s.user);
 
   const [policies, setPolicies] = useState<Policy[]>([]);
+  const [recentVitals, setRecentVitals] = useState<Vital[]>([]);
+  const [medications, setMedications] = useState<Medication[]>([]);
   const [firstName, setFirstName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -79,7 +85,7 @@ export default function HomeScreen() {
       let active = true;
       (async () => {
         const supabase = getSupabase();
-        const [policiesRes, profileRes] = await Promise.all([
+        const [policiesRes, profileRes, vitalsRes, medsRes] = await Promise.all([
           supabase
             .from('policies')
             .select('*')
@@ -87,16 +93,26 @@ export default function HomeScreen() {
           user
             ? supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle()
             : Promise.resolve({ data: null }),
+          supabase
+            .from('vitals')
+            .select('*')
+            .order('recorded_at', { ascending: false })
+            .limit(3),
+          supabase.from('medications').select('*').order('updated_at', { ascending: false }),
         ]);
         if (!active) {
           return;
         }
         const nextPolicies = policiesRes.data ?? [];
+        const nextMeds = medsRes.data ?? [];
         setPolicies(nextPolicies);
+        setRecentVitals(vitalsRes.data ?? []);
+        setMedications(nextMeds);
         const fullName = profileRes.data?.full_name ?? null;
         setFirstName(fullName ? fullName.trim().split(/\s+/)[0] : null);
         setLoading(false);
         void syncRenewalNotifications(nextPolicies);
+        void syncMedicationNotifications(nextMeds);
       })();
       return () => {
         active = false;
@@ -114,6 +130,8 @@ export default function HomeScreen() {
     () => policies.filter((p) => isRenewalSoon(p.renewal_date, 60)).slice(0, 4),
     [policies]
   );
+
+  const nextDose = useMemo(() => findNextDose(medications), [medications]);
 
   return (
     <ThemedView style={styles.root}>
@@ -197,6 +215,112 @@ export default function HomeScreen() {
                 </Pressable>
               </Animated.View>
             ))}
+          </View>
+
+          {/* ——— Health snapshot (slice 2.5) ——— */}
+          <SectionHeader
+            title="Health snapshot"
+            actionLabel="Open Health"
+            onAction={() => router.push('/health')}
+          />
+          <View style={styles.healthRow}>
+            <Animated.View entering={FadeInDown.duration(400)} style={styles.healthCell}>
+              {loading ? (
+                <Card style={styles.healthCard}>
+                  <Skeleton width={40} height={40} />
+                  <Skeleton width="70%" height={14} />
+                  <Skeleton width="90%" height={12} />
+                </Card>
+              ) : nextDose ? (
+                <PressableCard
+                  style={styles.healthCard}
+                  onPress={() => router.push(`/health/medications/${nextDose.medication.id}`)}>
+                  <IconBadge icon="medical" tint="violet" size={40} />
+                  <ThemedText type="caption" themeColor="textSecondary">
+                    Next medication
+                  </ThemedText>
+                  <ThemedText type="smallBold" numberOfLines={1}>
+                    {nextDose.medication.name}
+                  </ThemedText>
+                  <Chip
+                    label={nextDoseLabel(nextDose)}
+                    tint="amber"
+                    icon="alarm"
+                  />
+                  {nextDose.medication.dose ? (
+                    <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
+                      {nextDose.medication.dose}
+                    </ThemedText>
+                  ) : null}
+                </PressableCard>
+              ) : (
+                <PressableCard
+                  style={styles.healthCard}
+                  onPress={() => router.push('/health/medications/new')}>
+                  <IconBadge icon="medical" tint="violet" size={40} />
+                  <ThemedText type="smallBold">Medications</ThemedText>
+                  <ThemedText type="caption" themeColor="textSecondary">
+                    Add a med with a reminder to see your next dose here.
+                  </ThemedText>
+                  <Chip label="Add medication" tint="violet" icon="add" />
+                </PressableCard>
+              )}
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.duration(400).delay(60)} style={styles.healthCell}>
+              {loading ? (
+                <Card style={styles.healthCard}>
+                  <Skeleton width={40} height={40} />
+                  <Skeleton width="70%" height={14} />
+                  <Skeleton width="90%" height={12} />
+                </Card>
+              ) : recentVitals.length > 0 ? (
+                <PressableCard
+                  style={styles.healthCard}
+                  onPress={() => router.push('/health/vitals')}>
+                  <IconBadge
+                    icon={vitalVisual(recentVitals[0].vital_type).icon}
+                    tint={vitalVisual(recentVitals[0].vital_type).tint}
+                    size={40}
+                  />
+                  <ThemedText type="caption" themeColor="textSecondary">
+                    Recent vital
+                  </ThemedText>
+                  <ThemedText type="smallBold" numberOfLines={1}>
+                    {vitalTypeLabel(recentVitals[0].vital_type)}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                    {formatVitalValue(
+                      recentVitals[0].vital_type,
+                      recentVitals[0].value_primary,
+                      recentVitals[0].value_secondary,
+                      recentVitals[0].unit
+                    )}
+                  </ThemedText>
+                  <ThemedText type="caption" themeColor="textTertiary" numberOfLines={1}>
+                    {formatVitalWhen(recentVitals[0].recorded_at)}
+                  </ThemedText>
+                  {recentVitals.length > 1 ? (
+                    <Chip
+                      label={`+${recentVitals.length - 1} more`}
+                      tint="slate"
+                      icon="pulse"
+                    />
+                  ) : null}
+                </PressableCard>
+              ) : (
+                <PressableCard
+                  style={styles.healthCard}
+                  onPress={() => router.push('/health/vitals/new')}>
+                  <IconBadge icon="heart" tint="red" size={40} />
+                  <ThemedText type="smallBold">Vitals</ThemedText>
+                  <ThemedText type="caption" themeColor="textSecondary">
+                    Log blood pressure, sugar, or weight to track trends.
+                  </ThemedText>
+                  <Chip label="Log a reading" tint="teal" icon="add" />
+                </PressableCard>
+              )}
+            </Animated.View>
           </View>
 
           {/* ——— Upcoming renewals ——— */}
@@ -393,6 +517,19 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     minHeight: 108,
+  },
+  healthRow: {
+    flexDirection: 'row',
+    gap: Spacing.two + Spacing.half,
+  },
+  healthCell: {
+    flex: 1,
+    minWidth: 0,
+  },
+  healthCard: {
+    alignItems: 'flex-start',
+    gap: Spacing.one + Spacing.half,
+    minHeight: 168,
   },
   renewalList: {
     gap: Spacing.two + Spacing.half,

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Card, PressableCard } from '@/components/card';
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing, type TintName } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { loadAppleHealthPrefs } from '@/lib/apple-health/preferences';
 import { formatSyncedAt } from '@/lib/health-connect/format';
 import { loadHealthConnectPrefs } from '@/lib/health-connect/preferences';
 import { reminderSummary } from '@/lib/medications/format';
@@ -64,12 +65,14 @@ export default function HealthHubScreen() {
   const [recordCount, setRecordCount] = useState(0);
   const [hcConnected, setHcConnected] = useState(false);
   const [hcSyncedAt, setHcSyncedAt] = useState<string | null>(null);
+  const [ahConnected, setAhConnected] = useState(false);
+  const [ahSyncedAt, setAhSyncedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     const supabase = getSupabase();
-    const [vitalsRes, medsRes, recordsRes, hcPrefs] = await Promise.all([
+    const [vitalsRes, medsRes, recordsRes, hcPrefs, ahPrefs] = await Promise.all([
       supabase
         .from('vitals')
         .select('*')
@@ -79,6 +82,7 @@ export default function HealthHubScreen() {
       supabase.from('medications').select('*').eq('active', true).order('name'),
       supabase.from('medical_records').select('id'),
       loadHealthConnectPrefs(),
+      loadAppleHealthPrefs(),
     ]);
 
     setLatestVital(vitalsRes.data ?? null);
@@ -86,6 +90,8 @@ export default function HealthHubScreen() {
     setRecordCount(recordsRes.data?.length ?? 0);
     setHcConnected(hcPrefs.connected);
     setHcSyncedAt(hcPrefs.lastSyncedAt);
+    setAhConnected(ahPrefs.connected);
+    setAhSyncedAt(ahPrefs.lastSyncedAt);
     setLoading(false);
   }, []);
 
@@ -173,12 +179,39 @@ export default function HealthHubScreen() {
             <ThemedText type="caption" themeColor="textTertiary" numberOfLines={2}>
               {loading
                 ? '…'
-                : hcConnected
-                  ? `Connected · ${formatSyncedAt(hcSyncedAt)}`
-                  : 'Not connected · needs a development build'}
+                : Platform.OS !== 'android'
+                  ? 'Android only'
+                  : hcConnected
+                    ? `Connected · ${formatSyncedAt(hcSyncedAt)}`
+                    : 'Not connected · needs a development build'}
             </ThemedText>
           </View>
           <Chip label="Android" tint="green" />
+          <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
+        </PressableCard>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(225).springify()}>
+        <PressableCard
+          style={styles.linkCard}
+          onPress={() => router.push('/health/apple')}>
+          <IconBadge icon="logo-apple" tint="slate" size={48} />
+          <View style={styles.linkBody}>
+            <ThemedText type="smallBold">Apple Health</ThemedText>
+            <ThemedText type="caption" themeColor="textSecondary">
+              Read-only steps, heart rate, and sleep (iOS)
+            </ThemedText>
+            <ThemedText type="caption" themeColor="textTertiary" numberOfLines={2}>
+              {loading
+                ? '…'
+                : Platform.OS !== 'ios'
+                  ? 'iOS only · device testing pending'
+                  : ahConnected
+                    ? `Connected · ${formatSyncedAt(ahSyncedAt)}`
+                    : 'Not connected · needs a development build'}
+            </ThemedText>
+          </View>
+          <Chip label="iOS" tint="slate" />
           <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
         </PressableCard>
       </Animated.View>

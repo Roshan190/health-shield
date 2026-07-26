@@ -7,7 +7,7 @@ import { Platform } from 'react-native';
  */
 export function healthConnectUnsupportedReason(): string | null {
   if (Platform.OS !== 'android') {
-    return 'Health Connect is Android-only. Apple Health comes later (slice 2.4).';
+    return 'Health Connect is Android-only. On iOS, use Apple Health.';
   }
   if (Constants.appOwnership === 'expo') {
     return 'Health Connect needs a development build (not Expo Go). Use an EAS/dev-client APK on your Android device.';

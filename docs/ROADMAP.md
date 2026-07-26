@@ -111,8 +111,9 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 
 ### Slice 2.4 — Apple Health (iOS)
 
-- Same read-only thin set via HealthKit
-- **Prerequisite:** iOS access (device and/or Mac Simulator) + Foundation smoke — deferred per **D-010** (founder has no iOS device yet). Do not start 2.4 early.
+- Same read-only thin set via HealthKit (`apple-health` Expo module)
+- Screen `/health/apple`; upserts `platform_health_daily` with `source = apple_health`
+- **Runtime test:** pending until iOS device/dev-client available (**D-014**). Code shipped; do not treat as verified.
 
 ### Slice 2.5 — Polish
 
@@ -133,7 +134,25 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 
 ## Phase 3 — Emergency system
 
-Live location, SOS flows — after Phase 2.
+**Entered:** after Phase 2 exit (**D-014**). Blueprint Phase 3 is ambition; slice this thinly before coding.
+
+**Goal:** Live SOS / location-aware emergency — distinct from the static offline card in slice 1.5.
+
+### Slice plan (draft — refine before build)
+
+- 3.1 SOS entry + confirm — prominent action; no accidental send; reuse emergency profile fields
+- 3.2 Notify contacts — SMS/share or local compose with location link (India-first, least privilege)
+- 3.3 Live location (thin) — foreground location while SOS active; clear stop/cancel
+- 3.4 Polish — offline fallback to static card; export/delete unchanged for new tables if any
+
+**Deferred:** ambulance dispatch APIs, always-on background tracking, doctor portal emergency.
+
+### Phase 3 exit criteria
+
+1. SOS flow works on Android (primary)
+2. User can cancel; contacts never receive data without explicit confirm
+3. No secrets / real PII in repo; copy does not promise clinical outcomes
+4. `PROGRESS.md` updated
 
 ---
 

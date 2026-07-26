@@ -1,9 +1,9 @@
 # Progress
 
-**Last updated:** 2026-07-25  
-**Current phase:** Phase 2 — Health tracking  
-**Active slice:** 2.5 Polish (next); 2.4 blocked on iOS access  
-**Status:** Slices 2.1–2.3 built; Health hub nav (D-012)
+**Last updated:** 2026-07-26  
+**Current phase:** Phase 2 — Health tracking (**exit met**, D-014)  
+**Active slice:** Phase 2 complete (2.4 iOS **test pending**)  
+**Status:** Slices 2.1–2.5 built; Android smoked by founder; Apple Health code-complete, iOS test pending
 
 Agents: read this file at the start of every session. Update it when phase/slice status changes.
 
@@ -27,8 +27,8 @@ Agents: read this file at the start of every session. Update it when phase/slice
 |-------|--------|-------|
 | 0 Research | **Done** (D-007 override) | Competitive desk + synthetic users; real chats skipped |
 | 1 Foundation MVP | **Done** (D-010) | Slices 1.0–1.5; real Android smoke; iOS deferred |
-| 2 Health tracking | **Active** | Cut = D-011; slices in `ROADMAP.md` |
-| 3 Emergency | Blocked | After Phase 2 (live SOS — distinct from static 1.5 card) |
+| 2 Health tracking | **Done** (D-014) | Android smoked; 2.4 iOS test pending |
+| 3 Emergency | **Next** | Live SOS — distinct from static 1.5 card |
 | 4+ AI / claims / doctor / etc. | Blocked | After validation |
 
 ---
@@ -50,12 +50,24 @@ Agents: read this file at the start of every session. Update it when phase/slice
 - [x] 2.1 Manual vitals — BP / blood sugar / weight CRUD + simple list/trends
 - [x] 2.2 Medications — manual meds + local dose reminders
 - [x] 2.3 Health Connect (Android) — read-only steps/heart/sleep (thin)
-- [ ] 2.4 Apple Health (iOS) — blocked until iOS access (D-010)
-- [ ] 2.5 Polish — Home recent-vitals / next-med card
+- [x] 2.4 Apple Health (iOS) — code complete; **device testing pending** (D-014)
+- [x] 2.5 Polish — Home recent-vitals / next-med card
+- [x] Phase 2 exit — Android verified by founder; iOS Apple Health test deferred (D-014)
 
 ---
 
 ## Done log
+
+### 2026-07-26 (Phase 2.4 + Phase 2 exit)
+
+- Slice **2.4**: `apple-health` package + config plugin (read-only share copy; no background delivery). Lib `src/lib/apple-health/*` — consent, sync last 7 days (steps / avg HR / sleep mins) → `platform_health_daily` (`apple_health`). Screen `/health/apple`; Health hub link. Account delete clears Apple Health prefs. **iOS runtime smoke still pending** (no device).
+- **D-014:** Phase 2 exit accepted — founder confirmed Android works; Apple Health ship-untested on iOS.
+- Updated HC unsupported copy to point at Apple Health on iOS. Set `ios.bundleIdentifier`.
+
+### 2026-07-26 (Phase 2.5 + brand)
+
+- Slice **2.5**: Home **Health snapshot** — next medication dose card (`findNextDose`) + recent vital card; empty states deep-link to add flows; focus refresh also resyncs med notifications. Export/delete already covered vitals/meds/platform health.
+- **Brand (D-013):** New app icon + Android adaptive set + splash (deep blue / dark, larger mark, fade hide). Removed iOS Expo template `.icon`. Apple category wiring: `store.config.json` → `HEALTH_AND_FITNESS` (+ `MEDICAL` secondary), `LSApplicationCategoryType` healthcare-fitness. **Google Play “Health & fitness” must still be chosen in Play Console** (not available via `app.json`). Native rebuild required to see icon/splash on device.
 
 ### 2026-07-25 (Phase 2.3)
 
@@ -107,13 +119,13 @@ Agents: read this file at the start of every session. Update it when phase/slice
 ## Blockers
 
 - Real user validation still absent (accepted risk per D-007)
-- No iOS device yet — iOS smoke deferred (D-010); **blocks 2.4 Apple Health only**, not 2.1–2.3
+- No iOS device yet — Apple Health **runtime test pending** (D-014); Phase 2 exit still accepted on Android smoke
 
 ---
 
 ## Next actions (priority order)
 
-1. EAS preview/dev-client Android build to smoke Health Connect sync on device
-2. Slice **2.5** polish — Home recent vitals / next med reminder card
-3. Enable leaked-password protection in Supabase Auth (advisor WARN)
-4. Later (when iOS access exists): Foundation smoke + slice 2.4 Apple Health
+1. Phase **3** — Emergency system (live SOS / location) — write thin slice plan in `ROADMAP.md`, then build
+2. When iOS access exists: smoke Apple Health (`/health/apple`) on a real device / Simulator with HealthKit data
+3. In Google Play Console: set app category to **Health & fitness**
+4. Enable leaked-password protection in Supabase Auth (advisor WARN)

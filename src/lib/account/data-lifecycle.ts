@@ -1,5 +1,6 @@
 import { Share } from 'react-native';
 
+import { clearAppleHealthPrefs } from '@/lib/apple-health/preferences';
 import { clearEmergencyCardSnapshot } from '@/lib/emergency/card-store';
 import { clearHealthConnectPrefs } from '@/lib/health-connect/preferences';
 import { getSupabase } from '@/lib/supabase/client';
@@ -115,6 +116,7 @@ export async function deleteAccountCompletely(userId: string) {
 
   await clearEmergencyCardSnapshot();
   await clearHealthConnectPrefs();
+  await clearAppleHealthPrefs();
 
   const { error: rpcError } = await supabase.rpc('delete_own_account');
   if (rpcError) {

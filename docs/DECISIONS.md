@@ -6,6 +6,40 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 ---
 
+## D-014 — Phase 2 exit: Apple Health built; iOS testing pending
+
+**Status:** Accepted (2026-07-26) — founder override
+
+**Context:** Slice 2.4 (Apple Health) was blocked on iOS access (D-010). Founder confirmed Android Phase 2 smoke (including Health Connect) works as expected. No iOS device yet for HealthKit verification.
+
+**Decision:**
+- Implement slice **2.4** with `apple-health` (Expo HealthKit): read-only steps / heart rate / sleep → `platform_health_daily` with `source = apple_health`. UI at `/health/apple`.
+- Mark **iOS runtime testing as pending** (Simulator/device smoke later). Do not block Phase 2 exit on iOS verification.
+- Phase 2 exit met: 2.1–2.3 + 2.5 verified on Android; 2.4 code-complete with pending iOS test.
+
+**Why (founder):** Ship Apple Health parity in code; Android already validates the Phase 2 product cut.
+
+**Consequences / risk:** HealthKit permission/query bugs may surface only when an iPhone/dev-client build is available. Until then, treat Apple Health as untested. Next phase (3 Emergency) may start after docs update.
+
+---
+
+## D-013 — Brand mark: shield + check on trust→care gradient
+
+**Status:** Accepted (2026-07-26)
+
+**Context:** Default Expo/template icon and teal splash read as unfinished. Need a premium, consistent mark for icon + splash across Android/iOS.
+
+**Decision:**
+- App icon / adaptive foreground: white glass **shield** with brand-blue **checkmark** (teal tip accent) on a diagonal **trust-blue → care-teal** gradient.
+- Splash: deep blue `#1E3A8A` (dark `#0A101C`) with the same shield mark; fade-out on hide.
+- Store category intent: Apple primary **Health & Fitness** (`store.config.json` + `LSApplicationCategoryType` healthcare-fitness). Google Play category is set in Play Console (not via Expo app config).
+
+**Why:** Matches product name and in-app `shield-checkmark` language; blue/teal mirrors theme tokens (`Gradients.brand` / `care`). Avoids busy ECG overlays that look stock.
+
+**Consequences:** Replace assets under `assets/images/`; rebuild native binaries (EAS/dev-client) to see icon/splash. Do not revert to Expo template `.icon` for iOS.
+
+---
+
 ## D-012 — Health hub tab (keep bottom nav at five)
 
 **Status:** Accepted (2026-07-25)
