@@ -1,9 +1,9 @@
 # Progress
 
 **Last updated:** 2026-07-25  
-**Current phase:** Phase 1 — Foundation MVP  
-**Active slice:** Phase 1 complete (pending device smoke tests)  
-**Status:** Slice 1.5 Emergency card + polish built
+**Current phase:** Phase 2 — Health tracking  
+**Active slice:** 2.5 Polish (next); 2.4 blocked on iOS access  
+**Status:** Slices 2.1–2.3 built; Health hub nav (D-012)
 
 Agents: read this file at the start of every session. Update it when phase/slice status changes.
 
@@ -26,8 +26,8 @@ Agents: read this file at the start of every session. Update it when phase/slice
 | Phase | Status | Notes |
 |-------|--------|-------|
 | 0 Research | **Done** (D-007 override) | Competitive desk + synthetic users; real chats skipped |
-| 1 Foundation MVP | **Built** (smoke tests pending) | Slices 1.0–1.5 implemented |
-| 2 Health tracking | Blocked | After Phase 1 exit criteria / smoke tests |
+| 1 Foundation MVP | **Done** (D-010) | Slices 1.0–1.5; real Android smoke; iOS deferred |
+| 2 Health tracking | **Active** | Cut = D-011; slices in `ROADMAP.md` |
 | 3 Emergency | Blocked | After Phase 2 (live SOS — distinct from static 1.5 card) |
 | 4+ AI / claims / doctor / etc. | Blocked | After validation |
 
@@ -41,10 +41,43 @@ Agents: read this file at the start of every session. Update it when phase/slice
 - [x] 1.3 Medical records — CRUD + PDF/image upload + categories/tags + timeline/search
 - [x] 1.4 Family (basic) — member CRUD + thin viewer/manager roles + shared/private defaults (D-008)
 - [x] 1.5 Emergency card + polish — offline-capable card, local renewal notifications, export/delete (D-009)
+- [x] Phase 1 exit — founder confirmed real Android smoke (D-010); iOS Simulator still recommended before Apple Health
+
+---
+
+## Phase 2 — slices
+
+- [x] 2.1 Manual vitals — BP / blood sugar / weight CRUD + simple list/trends
+- [x] 2.2 Medications — manual meds + local dose reminders
+- [x] 2.3 Health Connect (Android) — read-only steps/heart/sleep (thin)
+- [ ] 2.4 Apple Health (iOS) — blocked until iOS access (D-010)
+- [ ] 2.5 Polish — Home recent-vitals / next-med card
 
 ---
 
 ## Done log
+
+### 2026-07-25 (Phase 2.3)
+
+- Slice **2.3**: `platform_health_daily` table + enums (RLS owner-only) via migration `20260725200000_create_platform_health_daily.sql` (applied remotely). Packages: `react-native-health-connect`, `expo-health-connect`, `expo-build-properties` (minSdk 26). Screen `/health/connect` — consent, sync last 7 days (steps / avg HR / sleep mins), disconnect; Expo Go shows clear “needs development build” state. Health hub links to Connect. Export/delete includes platform health + clears local HC prefs. **Requires EAS/dev-client APK** for real sync (not Expo Go).
+
+### 2026-07-25 (nav — Health hub)
+
+- **D-012:** Bottom tabs = Home · Policies · **Health** · Family · Profile. Health hub at `/health` nests vitals/medications/records under `/health/...`. Home quick actions thinned to Health / Add policy / Emergency.
+
+### 2026-07-25 (Phase 2.2)
+
+- Slice **2.2**: `medications` table (RLS owner-only) via migration `20260725190000_create_medications.sql` (applied remotely via MCP). CRUD screens; up to 3 daily local reminder times (`expo-notifications` DAILY trigger); shared notification runtime helper. Routes under `/health/medications`. Export/delete includes medications. Expo Go Android may skip notifications (same as renewals).
+
+### 2026-07-25 (Phase 2.1)
+
+- Slice **2.1**: `vitals` table + `vital_type` enum (RLS owner-only) via migration `20260725180000_create_vitals.sql` (applied remotely via MCP). Screens: list with type filters + short spark trend, log/detail/edit/delete. Types: blood pressure (sys/dia mmHg), blood sugar (mg/dL), weight (kg). Copy: personal log only — not diagnosis. Routes under `/health/vitals`. Export/delete lifecycle includes `vitals`.
+
+### 2026-07-25 (Phase 1 exit)
+
+- **D-010:** Phase 1 exit accepted on real Android device smoke; iOS Simulator smoke deferred until before Apple Health.
+- **D-011:** Phase 2 cut locked — manual vitals/meds first, then Health Connect / Apple Health read; OEM fitness apps deferred.
+- `ROADMAP.md` Phase 2 slice plan written; Phase 2 unblocked.
 
 ### 2026-07-25 (continued)
 
@@ -74,12 +107,13 @@ Agents: read this file at the start of every session. Update it when phase/slice
 ## Blockers
 
 - Real user validation still absent (accepted risk per D-007)
-- Phase 1 exit still needs iOS Simulator + Android Emulator smoke pass
+- No iOS device yet — iOS smoke deferred (D-010); **blocks 2.4 Apple Health only**, not 2.1–2.3
 
 ---
 
 ## Next actions (priority order)
 
-1. Device smoke test: Android file upload (policies + records), emergency card offline, renewal notification permission, export/delete (careful — destructive)
-2. Enable leaked-password protection in Supabase Auth (advisor WARN)
-3. After smoke pass: mark Phase 1 exit met; only then plan Phase 2 health tracking
+1. EAS preview/dev-client Android build to smoke Health Connect sync on device
+2. Slice **2.5** polish — Home recent vitals / next med reminder card
+3. Enable leaked-password protection in Supabase Auth (advisor WARN)
+4. Later (when iOS access exists): Foundation smoke + slice 2.4 Apple Health

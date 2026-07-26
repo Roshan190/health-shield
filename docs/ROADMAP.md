@@ -86,9 +86,48 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 
 ## Phase 2 — Health tracking
 
-Wearables / vitals / medications — only after Phase 1 exit.
+**Entered:** 2026-07-25 after Phase 1 exit (**D-010**). Cut locked in **D-011**. Blueprint Phase 2 is ambition; this section is what we build.
 
-See blueprint Phase 2. Detailed slice plan written when Phase 1 completes.
+**Goal:** Manual vitals + meds first (India-relevant), then thin read-only platform health sync. No diagnosis copy. No OEM fitness clones.
+
+### Slice 2.1 — Manual vitals
+
+- Types: blood pressure, blood sugar, weight
+- CRUD + date/time; owner RLS on Supabase
+- Simple list + short trend (not a full analytics product)
+- Empty / loading / error states
+
+### Slice 2.2 — Medications
+
+- Manual medication list (name, dose, schedule notes)
+- Local dose reminders (`expo-notifications`)
+- No pharmacy marketplace / adherence AI
+
+### Slice 2.3 — Health Connect (Android)
+
+- Read-only permissions for a thin set (e.g. steps, heart rate, sleep) via Expo/SDK 57–compatible path
+- Consent-first UX; user can disconnect
+- Persist last-sync metadata; do not invent missing samples
+
+### Slice 2.4 — Apple Health (iOS)
+
+- Same read-only thin set via HealthKit
+- **Prerequisite:** iOS access (device and/or Mac Simulator) + Foundation smoke — deferred per **D-010** (founder has no iOS device yet). Do not start 2.4 early.
+
+### Slice 2.5 — Polish
+
+- Home hooks for recent vitals / next med reminder
+- Export/delete paths include new tables
+- Confirm Android + (for 2.4) iOS smoke
+
+### Phase 2 exit criteria
+
+1. 2.1–2.2 work with Supabase persistence on Android (primary; matches D-010)
+2. At least one of 2.3 or 2.4 ships read-only sync on its platform, or explicit deferral recorded in `DECISIONS.md`
+3. No secrets / real health PII in repo; copy does not diagnose
+4. `PROGRESS.md` updated
+
+**Deferred from blueprint Phase 2:** Fitbit, Garmin, Samsung Health, ECG, SpO2/temp device streams, yearly dashboard product, rich workout tracker.
 
 ---
 

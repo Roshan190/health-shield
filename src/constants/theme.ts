@@ -195,5 +195,6 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+/** Space reserved under scroll content for the floating tab bar + safe area. */
+export const BottomTabInset = Platform.select({ ios: 96, android: 104 }) ?? 96;
 export const MaxContentWidth = 800;

@@ -1,6 +1,10 @@
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
+import {
+  getNotificationsModule,
+  notificationsUnsupported,
+  type NotificationsModule,
+} from '@/lib/notifications/runtime';
 import { formatDate } from '@/lib/policies/format';
 import type { Policy } from '@/lib/supabase/database.types';
 
@@ -10,47 +14,13 @@ const ID_PREFIX = 'renewal:';
 /** Days before renewal to fire a local reminder. */
 const OFFSETS_DAYS = [30, 7, 0] as const;
 
-type NotificationsModule = typeof import('expo-notifications');
-
 let handlerReady = false;
-let notificationsModule: NotificationsModule | null | undefined;
-
-/**
- * Android Expo Go (SDK 53+) throws if `expo-notifications` is imported at all.
- * Local/dev-client/iOS still work. Never statically import the package.
- */
-function notificationsUnsupported(): boolean {
-  if (Platform.OS === 'web') {
-    return true;
-  }
-  // Expo Go on Android — remote push removed; module throws on import.
-  if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
-    return true;
-  }
-  return false;
-}
-
-async function getNotifications(): Promise<NotificationsModule | null> {
-  if (notificationsUnsupported()) {
-    return null;
-  }
-  if (notificationsModule !== undefined) {
-    return notificationsModule;
-  }
-  try {
-    notificationsModule = await import('expo-notifications');
-    return notificationsModule;
-  } catch {
-    notificationsModule = null;
-    return null;
-  }
-}
 
 export async function ensureNotificationHandler() {
   if (handlerReady || notificationsUnsupported()) {
     return;
   }
-  const Notifications = await getNotifications();
+  const Notifications = await getNotificationsModule();
   if (!Notifications) {
     return;
   }
@@ -76,7 +46,7 @@ async function ensureAndroidChannel(Notifications: NotificationsModule) {
 }
 
 export async function requestNotificationPermissions(): Promise<boolean> {
-  const Notifications = await getNotifications();
+  const Notifications = await getNotificationsModule();
   if (!Notifications) {
     return false;
   }
@@ -100,7 +70,7 @@ function notificationId(policyId: string, offsetDays: number) {
 
 /** Cancel prior renewal reminders, then schedule for policies with future renewal dates. */
 export async function syncRenewalNotifications(policies: Policy[]) {
-  const Notifications = await getNotifications();
+  const Notifications = await getNotificationsModule();
   if (!Notifications) {
     // Expo Go Android / web: skip quietly — use a development build for reminders.
     return { scheduled: 0, skipped: true as const };

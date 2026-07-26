@@ -16,10 +16,11 @@ Full ambition: `docs/project-blueprint.md`
 
 ## Current reality (do not invent otherwise)
 
-- Phase 1 Foundation slices 1.0–1.5 built; exit pending device smoke tests. Do not start Phase 2 until smoke pass (or DECISIONS override).
-- Solo founder. Mobile-first Expo SDK **57**. Backend = Supabase project `health-shield` (email auth, `profiles`, `policies` + private `policy-docs` storage).
-- Not a monorepo yet. Not building AI, claims, doctor portal, or wearables yet — **do not wire OpenAI/OCR in Foundation**.
+- Phase 1 Foundation exit met via **D-010** (real Android smoke; iOS deferred). Phase 2 Health tracking is **active**; cut = **D-011**. Slices **2.1–2.3** built; nav = **D-012** Health hub. Next polish **2.5**; **2.4 Apple Health** blocked on iOS. See `PROGRESS.md` + `ROADMAP.md`.
+- Solo founder. Mobile-first Expo SDK **57**. Backend = Supabase project `health-shield` (profiles, policies, records, family, vitals, medications, `platform_health_daily`, emergency/export).
+- Health Connect needs a **dev-client / EAS build** (not Expo Go). Not building AI, claims, or doctor portal yet. No Fitbit/Garmin/Samsung clones in 2.x.
 - Phase 0 closed via D-007 without real user interviews — do not cite synthetic notes as validated research.
+- Run iOS smoke before slice **2.4** Apple Health (D-010).
 
 Before any implementation: read `docs/PROGRESS.md`.
 

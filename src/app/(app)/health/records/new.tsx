@@ -130,7 +130,7 @@ export default function NewRecordScreen() {
         }
       }
 
-      router.replace(`/records/${created.id}`);
+      router.replace(`/health/records/${created.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed');
     } finally {

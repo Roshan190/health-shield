@@ -56,10 +56,10 @@ type QuickAction = {
   soon?: string;
 };
 
+/** Thin Home CTAs only — full feature map lives in tabs / Health hub (D-012). */
 const QUICK_ACTIONS: QuickAction[] = [
+  { key: 'health', label: 'Health', icon: 'fitness', tint: 'teal', route: '/health' },
   { key: 'add-policy', label: 'Add policy', icon: 'add-circle', tint: 'blue', route: '/policies/new' },
-  { key: 'records', label: 'Records', icon: 'folder-open', tint: 'violet', route: '/records' },
-  { key: 'family', label: 'Family', icon: 'people', tint: 'amber', route: '/family' },
   { key: 'emergency', label: 'Emergency', icon: 'medkit', tint: 'red', route: '/profile/emergency' },
 ];
 
@@ -380,12 +380,11 @@ const styles = StyleSheet.create({
   },
   actionsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: Spacing.two + Spacing.half,
   },
   actionCell: {
-    flexBasis: '47%',
-    flexGrow: 1,
+    flex: 1,
+    minWidth: 0,
   },
   actionCard: {
     alignItems: 'flex-start',
@@ -393,7 +392,7 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: Radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    minHeight: 118,
+    minHeight: 108,
   },
   renewalList: {
     gap: Spacing.two + Spacing.half,

@@ -186,7 +186,7 @@ export default function ProfileScreen() {
     }
     Alert.alert(
       'Delete account?',
-      'This permanently deletes your profile, policies, records, family members, and uploaded documents. This cannot be undone.',
+      'This permanently deletes your profile, policies, records, family members, vitals, medications, synced health data, and uploaded documents. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {

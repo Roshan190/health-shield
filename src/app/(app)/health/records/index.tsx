@@ -89,7 +89,7 @@ export default function RecordsListScreen() {
       subtitle="Your family's medical document vault."
       headerRight={
         !loading && records.length > 0 ? (
-          <Button label="Add" icon="add" size="sm" onPress={() => router.push('/records/new')} />
+          <Button label="Add" icon="add" size="sm" onPress={() => router.push('/health/records/new')} />
         ) : undefined
       }>
       {loading ? (
@@ -112,7 +112,7 @@ export default function RecordsListScreen() {
           <Button
             label="Add your first record"
             icon="add-circle"
-            onPress={() => router.push('/records/new')}
+            onPress={() => router.push('/health/records/new')}
           />
         </EmptyState>
       ) : (
@@ -167,7 +167,7 @@ export default function RecordsListScreen() {
                         entering={FadeInDown.duration(350).delay(Math.min(index, 6) * 50)}>
                         <PressableCard
                           style={styles.recordCard}
-                          onPress={() => router.push(`/records/${record.id}`)}>
+                          onPress={() => router.push(`/health/records/${record.id}`)}>
                           <IconBadge icon={visual.icon} tint={visual.tint} size={46} />
                           <View style={styles.recordBody}>
                             <ThemedText type="smallBold" numberOfLines={1}>

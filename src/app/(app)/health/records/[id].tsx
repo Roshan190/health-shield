@@ -231,7 +231,7 @@ export default function RecordDetailScreen() {
       if (deleteError) {
         throw deleteError;
       }
-      router.replace('/records');
+      router.replace('/health/records');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed');
       setSaving(false);

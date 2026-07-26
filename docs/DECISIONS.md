@@ -6,6 +6,58 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 ---
 
+## D-012 — Health hub tab (keep bottom nav at five)
+
+**Status:** Accepted (2026-07-25)
+
+**Context:** Phase 2 added Vitals and Medications. Exposing each as a tab (or duplicating them with Records/Family on Home quick actions) overcrowds navigation.
+
+**Decision:**
+- Bottom tabs stay **five**: Home · Policies · **Health** · Family · Profile.
+- **Health** is a stack hub: `/health` lists Vitals, Medications, and Records; nested routes live under `/health/vitals`, `/health/medications`, `/health/records` (and later Health Connect).
+- Home quick actions stay thin: Health / Add policy / Emergency — not a second map of every feature.
+
+**Why:** One health entry matches the product mental model; keeps the Health tab selected while drilling in; avoids a 6–7 item tab bar and redundant Home tiles.
+
+**Consequences:** Records leave the top-level tab bar (one tap from Health). Prefer `/health/...` paths in new code. Do not add more bottom tabs without revisiting this decision.
+
+---
+
+## D-010 — Phase 1 exit on real Android smoke (iOS deferred)
+
+**Status:** Accepted (2026-07-25) — founder override
+
+**Context:** `ROADMAP.md` Phase 1 exit required iOS Simulator + Android Emulator smoke. Founder confirmed critical Foundation flows on **real Android devices**. Founder has **no iOS device** for testing now.
+
+**Decision:** Mark Phase 1 Foundation MVP exit met and unblock Phase 2 planning/build. Accept real-Android verification in place of Android Emulator. **All iOS verification (Simulator and/or device) is deferred** — test later when access exists. Do not block Phase 2.1–2.3 on iOS.
+
+**Why (founder):** Android-first; no iOS hardware yet; proceed.
+
+**Consequences / risk:** iOS-specific regressions may surface later. Blueprint lists Apple Health; that is ambition — **slice 2.4 stays blocked** until iOS smoke is possible (borrowed device, Mac Simulator, or TestFlight). Until then, ship and validate on Android. Do not treat iOS as validated.
+
+---
+
+## D-011 — Phase 2 cut (manual first, then platform health read)
+
+**Status:** Accepted (2026-07-25)
+
+**Context:** Blueprint Phase 2 lists many wearables, vitals, dashboards, and timeline surfaces. Building all at once repeats the Foundation over-scope failure mode.
+
+**Decision — in scope for Phase 2:**
+
+- Manual vitals (blood pressure, blood sugar, weight) with simple trends
+- Manual medications + local reminders
+- Read-only Health Connect (Android), then Apple Health (iOS)
+- Basic daily/weekly views — not full yearly analytics product
+
+**Explicitly deferred (later / Phase 2.x+):** Fitbit, Garmin, Samsung Health, ECG, SpO2/temp device streams, rich workout product, AI interpretation of vitals.
+
+**Why:** Competitive notes: read HealthKit / Health Connect; don’t reinvent fitness apps. Manual logs deliver India-relevant value (BP/sugar) without OEM partner work.
+
+**Consequences:** Slice plan in `ROADMAP.md`. No diagnosis copy. Sensitive vitals stay behind RLS; no real PII in fixtures.
+
+---
+
 ## D-009 — Account self-delete via SECURITY DEFINER RPC
 
 **Status:** Accepted (2026-07-25)
