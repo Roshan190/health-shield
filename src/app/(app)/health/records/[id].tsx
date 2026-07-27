@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
+import { AiSummaryCard } from '@/components/ai-summary-card';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip, SelectChip } from '@/components/chip';
@@ -14,8 +15,10 @@ import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
+import { VaultItemShareCard } from '@/components/vault-item-share-card';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { SummarizeError, summarizeItem } from '@/lib/ai/summarize';
 import { useSessionStore } from '@/lib/auth/session-store';
 import { formatDate } from '@/lib/policies/format';
 import {
@@ -55,6 +58,40 @@ const schema = z.object({
   notes: z.string().trim(),
 });
 
+function sameTags(a: string[], b: string[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  const left = [...a].sort();
+  const right = [...b].sort();
+  return left.every((tag, i) => tag === right[i]);
+}
+
+function isRecordFormDirty(
+  record: MedicalRecord,
+  fields: {
+    title: string;
+    category: RecordCategory;
+    recordDate: string;
+    tags: string;
+    notes: string;
+    familyMemberId: string | null;
+    pendingDoc: PickedRecordDoc | null;
+  }
+) {
+  if (fields.pendingDoc) {
+    return true;
+  }
+  return (
+    fields.title !== record.title ||
+    fields.category !== record.category ||
+    (fields.recordDate || null) !== record.record_date ||
+    !sameTags(parseTags(fields.tags), record.tags ?? []) ||
+    (fields.notes.trim() || null) !== record.notes ||
+    fields.familyMemberId !== record.family_member_id
+  );
+}
+
 export default function RecordDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -74,6 +111,10 @@ export default function RecordDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [summaryDisclaimer, setSummaryDisclaimer] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
 
   const hydrate = useCallback((row: MedicalRecord) => {
     setRecord(row);
@@ -244,6 +285,38 @@ export default function RecordDetailScreen() {
     }
   }
 
+  async function onSummarize() {
+    if (!record) {
+      return;
+    }
+    if (
+      isRecordFormDirty(record, {
+        title,
+        category,
+        recordDate,
+        tags,
+        notes,
+        familyMemberId,
+        pendingDoc,
+      })
+    ) {
+      Alert.alert('Save changes first', 'Summarize uses the last saved record details, not unsaved edits.');
+      return;
+    }
+
+    setSummarizing(true);
+    setSummaryError(null);
+    try {
+      const result = await summarizeItem('record', record.id);
+      setSummary(result.summary);
+      setSummaryDisclaimer(result.disclaimer);
+    } catch (e) {
+      setSummaryError(e instanceof SummarizeError ? e.message : 'Could not create a summary.');
+    } finally {
+      setSummarizing(false);
+    }
+  }
+
   if (loading) {
     return (
       <Screen title="Record">
@@ -273,21 +346,59 @@ export default function RecordDetailScreen() {
   }
 
   const visual = recordVisual(record.category);
+  const isOwner = Boolean(user && record.user_id === user.id);
 
   return (
     <Screen
       title={record.title}
-      subtitle={`${recordCategoryLabel(record.category)}${
+      subtitle={`${isOwner ? '' : 'Shared · '}${recordCategoryLabel(record.category)}${
         record.record_date ? ` · ${formatDate(record.record_date)}` : ''
       }`}
       headerRight={<IconBadge icon={visual.icon} tint={visual.tint} size={44} />}>
+      {!isOwner ? (
+        <Card variant="tinted" style={styles.sharedBanner}>
+          <IconBadge icon="eye" tint="teal" size={34} />
+          <View style={styles.sharedBannerBody}>
+            <ThemedText type="smallBold">Shared view</ThemedText>
+            <ThemedText type="caption" themeColor="textSecondary">
+              You can view this record. Only the owner can edit or share it.
+            </ThemedText>
+          </View>
+        </Card>
+      ) : null}
+
+      <AiSummaryCard
+        summary={summary}
+        disclaimer={summaryDisclaimer}
+        error={summaryError}
+        loading={summarizing}
+        disabled={saving}
+        onSummarize={() => {
+          void onSummarize();
+        }}
+      />
+
+      {isOwner ? (
+        <VaultItemShareCard
+          ownerUserId={record.user_id}
+          resourceType="medical_record"
+          resourceId={record.id}
+        />
+      ) : null}
+
       {/* ——— Record details ——— */}
       <Card style={styles.formCard}>
         <View style={styles.cardTitleRow}>
           <IconBadge icon="document-text" tint="blue" size={34} />
           <ThemedText type="section">Record details</ThemedText>
         </View>
-        <TextField label="Title" icon="create" value={title} onChangeText={setTitle} />
+        <TextField
+          label="Title"
+          icon="create"
+          value={title}
+          onChangeText={setTitle}
+          editable={isOwner}
+        />
         <ThemedText type="smallBold" themeColor="textSecondary">
           Category
         </ThemedText>
@@ -298,7 +409,7 @@ export default function RecordDetailScreen() {
               label={item.label}
               selected={category === item.value}
               onPress={() => setCategory(item.value)}
-              disabled={saving}
+              disabled={saving || !isOwner}
             />
           ))}
         </View>
@@ -307,12 +418,13 @@ export default function RecordDetailScreen() {
           value={recordDate}
           onChange={setRecordDate}
           maximumDate={new Date()}
+          disabled={!isOwner}
         />
         <FamilyMemberPicker
           members={members}
           value={familyMemberId}
           onChange={setFamilyMemberId}
-          disabled={saving}
+          disabled={saving || !isOwner}
         />
       </Card>
 
@@ -329,6 +441,7 @@ export default function RecordDetailScreen() {
           value={tags}
           onChangeText={setTags}
           autoCapitalize="none"
+          editable={isOwner}
         />
         <TextField
           label="Notes"
@@ -337,6 +450,7 @@ export default function RecordDetailScreen() {
           onChangeText={setNotes}
           multiline
           style={styles.notesInput}
+          editable={isOwner}
         />
       </Card>
 
@@ -374,21 +488,25 @@ export default function RecordDetailScreen() {
             No document attached yet.
           </ThemedText>
         )}
-        {pendingDoc ? <Chip label={`Replace with: ${pendingDoc.name}`} tint="blue" icon="attach" /> : null}
-        <Button
-          label={
-            pendingDoc
-              ? 'Choose a different file'
-              : record.document_path
-                ? 'Replace document'
-                : 'Attach PDF or image'
-          }
-          icon="cloud-upload"
-          variant="secondary"
-          size="md"
-          onPress={onPickDocument}
-          disabled={saving}
-        />
+        {pendingDoc && isOwner ? (
+          <Chip label={`Replace with: ${pendingDoc.name}`} tint="blue" icon="attach" />
+        ) : null}
+        {isOwner ? (
+          <Button
+            label={
+              pendingDoc
+                ? 'Choose a different file'
+                : record.document_path
+                  ? 'Replace document'
+                  : 'Attach PDF or image'
+            }
+            icon="cloud-upload"
+            variant="secondary"
+            size="md"
+            onPress={onPickDocument}
+            disabled={saving}
+          />
+        ) : null}
       </Card>
 
       {error ? (
@@ -408,20 +526,33 @@ export default function RecordDetailScreen() {
         </Card>
       ) : null}
 
-      <Button label="Save changes" icon="checkmark" loading={saving} onPress={onSave} />
-      <Button
-        label="Delete record"
-        variant="danger"
-        icon="trash"
-        onPress={confirmDelete}
-        disabled={saving}
-      />
+      {isOwner ? (
+        <>
+          <Button label="Save changes" icon="checkmark" loading={saving} onPress={onSave} />
+          <Button
+            label="Delete record"
+            variant="danger"
+            icon="trash"
+            onPress={confirmDelete}
+            disabled={saving}
+          />
+        </>
+      ) : null}
       <Button label="Back" variant="ghost" onPress={() => router.back()} disabled={saving} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  sharedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two + Spacing.half,
+  },
+  sharedBannerBody: {
+    flex: 1,
+    gap: Spacing.half,
+  },
   formCard: {
     gap: Spacing.three,
   },

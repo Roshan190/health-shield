@@ -231,11 +231,77 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 
 ---
 
-## Phase 4+ — AI, claims, doctor portal, premium, enterprise
+## Phase 4 — Thin AI summaries (OpenAI)
 
-Do **not** start early. Blueprint Phases 4–8 stay deferred until a thin cut + override is recorded in `DECISIONS.md`.
+**Entered:** 2026-07-27 after Q2 exit (**D-017**). Cut locked in **D-019** (founder override; D-018 invite/share stays pending).
 
-**Active alternative:** Phase Q2 deepen (**D-017**). Starting blueprint Phase 4 AI requires an explicit cut + override.
+**Goal:** Plain-language summaries of policy and medical-record **form fields** the user already entered. Assistive only — never diagnose. No PDF/OCR.
+
+### Slice 4.1 — Policy summarize
+
+- Summarize button on `/policies/[id]`
+- Edge Function loads owner row via RLS; sends structured fields to OpenAI
+- Disclaimer copy on every result
+
+### Slice 4.2 — Medical record summarize
+
+- Same pattern on `/health/records/[id]` (title, category, date, tags, notes only)
+
+### Phase 4 exit criteria
+
+1. Summarize works for a saved policy and a saved record when `OPENAI_API_KEY` is set on the Edge Function
+2. No OpenAI key in git or client bundle; PDFs never sent to the model
+3. UI copy does not diagnose or prescribe
+4. `PROGRESS.md` updated
+
+**Closed:** 2026-07-27 via **D-020** (founder smoke + UI polish).
+
+**Deferred from blueprint Phase 4:** OCR / explain full reports from files, doctor-visit packs, claim guidance, lifestyle suggestions, chat UI.
+
+---
+
+## Phase H — Household invite / share (D-018)
+
+**Entered:** 2026-07-27 after Phase 4 exit (**D-020**). Cut locked in **D-018**.
+
+**Goal:** Mom (separate login) can view items the manager **explicitly shares** after accepting an email invite. View-only. No fake sharing via family profiles alone.
+
+### Slice H1 — Invite by email
+
+- Owner creates pending invite (email normalized)
+- Invitee sees pending invites when logged in with that email
+
+### Slice H2 — Accept → membership
+
+- `accept_household_invite` RPC; creates/reactivates `vault_memberships`
+
+### Slice H3 — Explicit item shares
+
+- Owner shares individual policies / medical records with an active member
+- Unshare + revoke membership
+
+### Slice H4 — Viewer UX
+
+- Shared items appear in lists with a Shared label
+- Detail is read-only for non-owners; Open PDF when shared Storage allows
+
+### Exit criteria
+
+1. Invite → accept → share policy + record → viewer can read on their login
+2. Revoke removes access; no secrets / real PII in repo
+3. `PROGRESS.md` updated
+
+**Closed:** 2026-07-27 via **D-021** (founder two-account smoke).
+
+**Deferred:** Email delivery, share-all, invitee edit, vitals/meds/SOS share, full household roles matrix.
+
+---
+
+## Phase 5+ — Claims, doctor portal, premium, enterprise
+
+Do **not** start early. Blueprint Phases 5–8 stay deferred until a thin cut + override is recorded in `DECISIONS.md`.
+
+**Recent exits:** Phase 4 AI thin cut (**D-020**); household invite/share (**D-021**).
 
 ---
 

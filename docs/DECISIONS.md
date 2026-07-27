@@ -6,28 +6,73 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 ---
 
-## D-018 — Household invite / shared vault (pending — not approved to build)
+## D-021 — Household invite / share exit (D-018 smoke)
 
-**Status:** Pending (2026-07-27) — founder question after Q2 exit
+**Status:** Accepted (2026-07-27) — founder confirmation
 
-**Context:** Founder asked: if Mom downloads the app and logs in with her own account, should she see medical records/policies the manager added and tagged for her? Real users liked the app (R1); this is the natural next household ask.
+**Context:** D-018 thin invite + explicit share shipped. Founder smoke-tested invite → accept → share → view-only → revoke (including web confirm fix for revoke).
 
-**Current behavior (unchanged — D-008 / D-017):**
-- `family_members` are **profiles on the owner's account**, not separate logins.
-- `family_member_id` on `medical_records` and `policies` is **organize-only** for the signed-in owner.
-- If Mom signs up separately, she gets an **empty account**; she does **not** see the manager's vault.
+**Decision:** Mark Phase H / D-018 exit met for the thin cut. Email delivery of invites, share-all, invitee edit, and vitals/meds/SOS share remain deferred.
 
-**Decision:** **None yet.** Do not half-build sharing (shared password, phone-only link, or RLS without invites/consent).
+**Why (founder):** Two-account flow works as expected.
 
-**Recommended next slice if founder chooses sharing over Phase 4 AI:**
-- Thin **invite + viewer** cut: manager invites by email → accept → view-only access to explicitly shared policies/records (not full account merge).
-- Requires new decision with schema + RLS + consent/revoke UX before coding.
+**Consequences:** Next work needs a new pick (ops checklist, OCR PDF import, email invites, Phase 5+, polish). Do not expand sharing without a new decision.
 
-**Alternatives:** (A) Build invite/share (above), (B) Stay manager-only — you show Mom the phone / emergency card, (C) Phase 4 thin AI instead (needs separate override).
+---
 
-**Why record now:** Prevents agents from silently implementing "Mom sees her records" without invite RLS.
+## D-020 — Phase 4 exit: thin AI summaries verified
 
-**Consequences:** Next chat should start by having founder pick A / B / C; if A, draft D-018 acceptance with explicit thin cut.
+**Status:** Accepted (2026-07-27) — founder confirmation (Summarize works; UI polish shipped)
+
+**Context:** D-019 thin AI shipped. Founder confirmed Summarize on a saved policy. Summary UI polished (fact rows; no raw markdown). OpenAI key lives on Edge Function secrets only.
+
+**Decision:** Mark Phase 4 exit met for the D-019 cut. OCR / PDF-read / chat / claims remain deferred.
+
+**Why (founder):** Proceed to household invite/share (D-018).
+
+**Consequences:** Next track was **D-018** thin invite + viewer. Do not expand AI without a new decision.
+
+---
+
+## D-019 — Phase 4 thin AI: OpenAI metadata summaries (override)
+
+**Status:** Accepted (2026-07-27) — founder override; **exited via D-020**
+
+**Context:** Q2 deepen (D-017) complete. Founder has an OpenAI API key and chose thin AI over household invite/share for the next track. Blueprint Phase 4 lists explain reports, doctor visit packs, claim guidance, lifestyle — too broad for a first cut. D-016 said Phase 4 stays blocked until retention validates unless a separate override is recorded.
+
+**Decision — in scope:**
+- **4.1** Plain-language **Summarize** on policy detail from **structured form fields only** (insurer, type, amounts, dates, nominee, notes) — no PDF/OCR
+- **4.2** Same for medical record detail (title, category, date, tags, notes) — no PDF/image reading
+- OpenAI via **Supabase Edge Function** (`summarize-item`); `OPENAI_API_KEY` is a function secret only — never `EXPO_PUBLIC_*` / never in the app bundle
+- Copy: assistive organizer language; **never diagnose, prescribe, or replace a doctor**
+
+**Explicitly deferred:** PDF/OCR, claim guidance, doctor-visit summaries, lifestyle tips, chat UI, invite + shared RLS (moved to D-018), claims assistant, doctor portal.
+
+**Why (founder):** OpenAI key available; want useful plain-language help on vault items before household sharing.
+
+**Consequences / risk:** Accepts early-AI validation risk from D-016. Agents must not expand into blueprint Phase 4 capabilities without a new decision.
+
+---
+
+## D-018 — Household invite / shared vault (thin invite + viewer)
+
+**Status:** Accepted (2026-07-27) — founder chose this after Phase 4 exit (D-020); **exited via D-021**
+
+**Context:** Founder asked: if Mom downloads the app and logs in, should she see records the manager added for her? `family_member_id` is organize-only (D-008). Separate login stays empty until explicit invite + share.
+
+**Decision — in scope:**
+- **H1** Owner invites by **email** (in-app pending invite; no email provider required for this cut)
+- **H2** Invitee with matching account email can **accept** → `vault_memberships` (viewer)
+- **H3** Owner **explicitly shares** individual policies and/or medical records with an active member
+- **H4** Member gets **view-only** RLS on shared rows (+ read shared Storage objects); cannot edit/delete owner's data
+- **H5** Owner can **revoke** membership (and clear shares) or unshare a single item
+- Copy: tagging a family profile ≠ sharing with a login
+
+**Explicitly deferred:** Full account merge, manager role for invitees, share-all-by-default, email/SMS delivery of invites, editing shared items, sharing vitals/meds/SOS.
+
+**Why (founder):** Household usefulness after Foundation + thin AI.
+
+**Consequences:** Requires schema + RLS + consent/revoke UX. Do not fake sharing via `family_members` alone.
 
 ---
 

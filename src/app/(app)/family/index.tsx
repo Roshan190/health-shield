@@ -84,11 +84,20 @@ export default function FamilyListScreen() {
   return (
     <Screen
       title="Family"
-      subtitle="Household profiles you manage."
+      subtitle="Profiles you manage · sharing for logins"
       headerRight={
-        !loading && members.length > 0 ? (
-          <Button label="Add" icon="add" size="sm" onPress={() => router.push('/family/new')} />
-        ) : undefined
+        <View style={styles.headerActions}>
+          <Button
+            label="Sharing"
+            icon="share-social"
+            size="sm"
+            variant="secondary"
+            onPress={() => router.push('/family/sharing')}
+          />
+          {!loading && members.length > 0 ? (
+            <Button label="Add" icon="add" size="sm" onPress={() => router.push('/family/new')} />
+          ) : null}
+        </View>
       }>
       {loading ? (
         <View style={styles.list}>
@@ -108,11 +117,17 @@ export default function FamilyListScreen() {
           tint="amber"
           accessories={['heart', 'shield-checkmark']}
           title="Add your household"
-          message="Spouse, children, parents — keep their basics here. Policies and records stay private to you until sharing ships.">
+          message="Spouse, children, parents — keep their basics here. To let Mom see items on her own login, use Sharing (invite by email).">
           <Button
             label="Add family member"
             icon="person-add"
             onPress={() => router.push('/family/new')}
+          />
+          <Button
+            label="Open sharing"
+            icon="share-social"
+            variant="secondary"
+            onPress={() => router.push('/family/sharing')}
           />
         </EmptyState>
       ) : (
@@ -120,11 +135,10 @@ export default function FamilyListScreen() {
           <Card variant="tinted" style={styles.defaultsCard}>
             <IconBadge icon="lock-closed" tint="slate" size={40} />
             <View style={styles.defaultsBody}>
-              <ThemedText type="smallBold">Profiles on your account</ThemedText>
+              <ThemedText type="smallBold">Profiles vs logins</ThemedText>
               <ThemedText type="caption" themeColor="textSecondary">
-                Family members are not separate logins. Policies and records stay private to you.
-                Tag people on policies/records to organize your vault; roles (viewer / manager) are
-                intent only until invite/share ships.
+                Family members here are profiles on your account. To share with someone's own
+                login, use Sharing: invite → they accept → share specific policies or records.
               </ThemedText>
             </View>
           </Card>
@@ -175,6 +189,11 @@ export default function FamilyListScreen() {
 const styles = StyleSheet.create({
   list: {
     gap: Spacing.two + Spacing.half,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   defaultsCard: {
     flexDirection: 'row',

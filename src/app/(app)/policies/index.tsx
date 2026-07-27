@@ -15,6 +15,7 @@ import { SkeletonCard } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useSessionStore } from '@/lib/auth/session-store';
 import { syncRenewalNotifications } from '@/lib/notifications/renewals';
 import {
   formatInrCompact,
@@ -30,6 +31,7 @@ import type { FamilyMember, Policy } from '@/lib/supabase/database.types';
 export default function PoliciesListScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const user = useSessionStore((s) => s.user);
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,11 +63,12 @@ export default function PoliciesListScreen() {
     } else {
       const rows = policiesRes.data ?? [];
       setPolicies(rows);
-      void syncRenewalNotifications(rows);
+      const owned = user ? rows.filter((p) => p.user_id === user.id) : rows;
+      void syncRenewalNotifications(owned);
     }
     setMembers(membersRes.data ?? []);
     setLoading(false);
-  }, []);
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
@@ -167,6 +170,7 @@ export default function PoliciesListScreen() {
               const memberName = policy.family_member_id
                 ? memberById.get(policy.family_member_id)?.full_name
                 : null;
+              const isShared = Boolean(user && policy.user_id !== user.id);
               return (
                 <Animated.View
                   key={policy.id}
@@ -195,11 +199,14 @@ export default function PoliciesListScreen() {
                             cover
                           </ThemedText>
                         </ThemedText>
-                        <Chip
-                          label={renewalLabel(policy.renewal_date)}
-                          tint={RENEWAL_TONE_TINT[tone]}
-                          icon={tone === 'muted' ? 'calendar' : 'alarm'}
-                        />
+                        <View style={styles.chipRow}>
+                          {isShared ? <Chip label="Shared" tint="teal" icon="eye" /> : null}
+                          <Chip
+                            label={renewalLabel(policy.renewal_date)}
+                            tint={RENEWAL_TONE_TINT[tone]}
+                            icon={tone === 'muted' ? 'calendar' : 'alarm'}
+                          />
+                        </View>
                       </View>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
@@ -257,5 +264,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.two,
     marginTop: Spacing.half,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.one,
+    justifyContent: 'flex-end',
   },
 });

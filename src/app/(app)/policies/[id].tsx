@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
+import { AiSummaryCard } from '@/components/ai-summary-card';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip, SelectChip } from '@/components/chip';
@@ -15,8 +16,10 @@ import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
+import { VaultItemShareCard } from '@/components/vault-item-share-card';
 import { Overlay, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useGradients, useTheme } from '@/hooks/use-theme';
+import { SummarizeError, summarizeItem } from '@/lib/ai/summarize';
 import { useSessionStore } from '@/lib/auth/session-store';
 import {
   formatDate,
@@ -71,6 +74,41 @@ function parseAmount(value: string) {
   return Number.isFinite(n) ? n : null;
 }
 
+function isPolicyFormDirty(
+  policy: Policy,
+  fields: {
+    insurer: string;
+    policyNumber: string;
+    policyType: PolicyType;
+    sumInsured: string;
+    premiumAmount: string;
+    premiumFrequency: string;
+    startDate: string;
+    renewalDate: string;
+    nominee: string;
+    notes: string;
+    familyMemberId: string | null;
+    pendingPdf: PickedPdf | null;
+  }
+) {
+  if (fields.pendingPdf) {
+    return true;
+  }
+  return (
+    fields.insurer !== policy.insurer ||
+    fields.policyNumber !== policy.policy_number ||
+    fields.policyType !== policy.policy_type ||
+    parseAmount(fields.sumInsured) !== policy.sum_insured ||
+    parseAmount(fields.premiumAmount) !== policy.premium_amount ||
+    (fields.premiumFrequency || 'annual') !== (policy.premium_frequency ?? 'annual') ||
+    (fields.startDate || null) !== policy.start_date ||
+    (fields.renewalDate || null) !== policy.renewal_date ||
+    (fields.nominee.trim() || null) !== policy.nominee ||
+    (fields.notes.trim() || null) !== policy.notes ||
+    fields.familyMemberId !== policy.family_member_id
+  );
+}
+
 export default function PolicyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -96,6 +134,10 @@ export default function PolicyDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [summaryDisclaimer, setSummaryDisclaimer] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
 
   const hydrate = useCallback((row: Policy) => {
     setPolicy(row);
@@ -289,6 +331,43 @@ export default function PolicyDetailScreen() {
     }
   }
 
+  async function onSummarize() {
+    if (!policy) {
+      return;
+    }
+    if (
+      isPolicyFormDirty(policy, {
+        insurer,
+        policyNumber,
+        policyType,
+        sumInsured,
+        premiumAmount,
+        premiumFrequency,
+        startDate,
+        renewalDate,
+        nominee,
+        notes,
+        familyMemberId,
+        pendingPdf,
+      })
+    ) {
+      Alert.alert('Save changes first', 'Summarize uses the last saved policy details, not unsaved edits.');
+      return;
+    }
+
+    setSummarizing(true);
+    setSummaryError(null);
+    try {
+      const result = await summarizeItem('policy', policy.id);
+      setSummary(result.summary);
+      setSummaryDisclaimer(result.disclaimer);
+    } catch (e) {
+      setSummaryError(e instanceof SummarizeError ? e.message : 'Could not create a summary.');
+    } finally {
+      setSummarizing(false);
+    }
+  }
+
   if (loading) {
     return (
       <Screen title="Policy">
@@ -320,9 +399,28 @@ export default function PolicyDetailScreen() {
 
   const visual = policyVisual(policy.policy_type);
   const tone = renewalTone(policy.renewal_date);
+  const isOwner = Boolean(user && policy.user_id === user.id);
 
   return (
-    <Screen title={policy.insurer} subtitle={`Policy № ${policy.policy_number}`}>
+    <Screen
+      title={policy.insurer}
+      subtitle={
+        isOwner
+          ? `Policy № ${policy.policy_number}`
+          : `Shared with you · № ${policy.policy_number}`
+      }>
+      {!isOwner ? (
+        <Card variant="tinted" style={styles.sharedBanner}>
+          <IconBadge icon="eye" tint="teal" size={34} />
+          <View style={styles.sharedBannerBody}>
+            <ThemedText type="smallBold">Shared view</ThemedText>
+            <ThemedText type="caption" themeColor="textSecondary">
+              You can view this policy. Only the owner can edit or share it.
+            </ThemedText>
+          </View>
+        </Card>
+      ) : null}
+
       {/* ——— Summary hero ——— */}
       <View style={[styles.heroWrap, Shadow.floating]}>
         <LinearGradient
@@ -370,19 +468,44 @@ export default function PolicyDetailScreen() {
         </LinearGradient>
       </View>
 
+      <AiSummaryCard
+        summary={summary}
+        disclaimer={summaryDisclaimer}
+        error={summaryError}
+        loading={summarizing}
+        disabled={saving}
+        onSummarize={() => {
+          void onSummarize();
+        }}
+      />
+
+      {isOwner ? (
+        <VaultItemShareCard
+          ownerUserId={policy.user_id}
+          resourceType="policy"
+          resourceId={policy.id}
+        />
+      ) : null}
       {/* ——— Policy details ——— */}
       <Card style={styles.formCard}>
         <View style={styles.cardTitleRow}>
           <IconBadge icon="document-text" tint="blue" size={34} />
           <ThemedText type="section">Policy details</ThemedText>
         </View>
-        <TextField label="Insurer" icon="business" value={insurer} onChangeText={setInsurer} />
+        <TextField
+          label="Insurer"
+          icon="business"
+          value={insurer}
+          onChangeText={setInsurer}
+          editable={isOwner}
+        />
         <TextField
           label="Policy number"
           icon="barcode"
           value={policyNumber}
           onChangeText={setPolicyNumber}
           autoCapitalize="characters"
+          editable={isOwner}
         />
         <ThemedText type="smallBold" themeColor="textSecondary">
           Type
@@ -394,7 +517,7 @@ export default function PolicyDetailScreen() {
               label={type.label}
               selected={policyType === type.value}
               onPress={() => setPolicyType(type.value)}
-              disabled={saving}
+              disabled={saving || !isOwner}
             />
           ))}
         </View>
@@ -412,6 +535,7 @@ export default function PolicyDetailScreen() {
           value={sumInsured}
           onChangeText={setSumInsured}
           keyboardType="numeric"
+          editable={isOwner}
         />
         <TextField
           label="Premium amount (INR)"
@@ -419,6 +543,7 @@ export default function PolicyDetailScreen() {
           value={premiumAmount}
           onChangeText={setPremiumAmount}
           keyboardType="numeric"
+          editable={isOwner}
         />
         <ThemedText type="smallBold" themeColor="textSecondary">
           Premium frequency
@@ -430,7 +555,7 @@ export default function PolicyDetailScreen() {
               label={freq.replace('_', ' ')}
               selected={premiumFrequency === freq}
               onPress={() => setPremiumFrequency(freq)}
-              disabled={saving}
+              disabled={saving || !isOwner}
             />
           ))}
         </View>
@@ -447,6 +572,7 @@ export default function PolicyDetailScreen() {
           icon="play"
           value={startDate}
           onChange={setStartDate}
+          disabled={!isOwner}
         />
         <DateField
           label="Renewal date"
@@ -454,17 +580,24 @@ export default function PolicyDetailScreen() {
           value={renewalDate}
           onChange={setRenewalDate}
           hint="Renewals appear on Home 60 days ahead."
+          disabled={!isOwner}
         />
         <FamilyMemberPicker
           members={members}
           value={familyMemberId}
           onChange={setFamilyMemberId}
-          disabled={saving}
+          disabled={saving || !isOwner}
           label="Covered member"
           hint="Optional. Who this policy primarily covers in your household."
           emptyHint="Add someone under Family to link cover to them. Profiles stay on your account — they do not get a separate login yet."
         />
-        <TextField label="Nominee" icon="person" value={nominee} onChangeText={setNominee} />
+        <TextField
+          label="Nominee"
+          icon="person"
+          value={nominee}
+          onChangeText={setNominee}
+          editable={isOwner}
+        />
         <TextField
           label="Notes"
           icon="create"
@@ -472,6 +605,7 @@ export default function PolicyDetailScreen() {
           onChangeText={setNotes}
           multiline
           style={styles.notesInput}
+          editable={isOwner}
         />
       </Card>
 
@@ -499,20 +633,22 @@ export default function PolicyDetailScreen() {
             No PDF attached yet. Keep the original policy document safe here.
           </ThemedText>
         )}
-        <Button
-          label={
-            pendingPdf
-              ? `Replace with: ${pendingPdf.name}`
-              : policy.document_path
-                ? 'Replace PDF'
-                : 'Attach policy PDF'
-          }
-          icon="cloud-upload"
-          variant="secondary"
-          size="md"
-          onPress={onPickPdf}
-          disabled={saving}
-        />
+        {isOwner ? (
+          <Button
+            label={
+              pendingPdf
+                ? `Replace with: ${pendingPdf.name}`
+                : policy.document_path
+                  ? 'Replace PDF'
+                  : 'Attach policy PDF'
+            }
+            icon="cloud-upload"
+            variant="secondary"
+            size="md"
+            onPress={onPickPdf}
+            disabled={saving}
+          />
+        ) : null}
       </Card>
 
       {error ? (
@@ -532,14 +668,33 @@ export default function PolicyDetailScreen() {
         </Card>
       ) : null}
 
-      <Button label="Save changes" icon="checkmark" loading={saving} onPress={onSave} />
-      <Button label="Delete policy" variant="danger" icon="trash" onPress={confirmDelete} disabled={saving} />
+      {isOwner ? (
+        <>
+          <Button label="Save changes" icon="checkmark" loading={saving} onPress={onSave} />
+          <Button
+            label="Delete policy"
+            variant="danger"
+            icon="trash"
+            onPress={confirmDelete}
+            disabled={saving}
+          />
+        </>
+      ) : null}
       <Button label="Back" variant="ghost" onPress={() => router.back()} disabled={saving} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  sharedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two + Spacing.half,
+  },
+  sharedBannerBody: {
+    flex: 1,
+    gap: Spacing.half,
+  },
   heroWrap: {
     borderRadius: Radius.xxl,
   },

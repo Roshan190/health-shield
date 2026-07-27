@@ -33,6 +33,12 @@ export type PlatformHealthSource = 'health_connect' | 'apple_health';
 
 export type PlatformHealthMetric = 'steps' | 'heart_rate' | 'sleep';
 
+export type HouseholdInviteStatus = 'pending' | 'accepted' | 'revoked' | 'cancelled';
+
+export type VaultMembershipStatus = 'active' | 'revoked';
+
+export type VaultResourceType = 'policy' | 'medical_record';
+
 export type Database = {
   public: {
     Tables: {
@@ -352,12 +358,119 @@ export type Database = {
         };
         Relationships: [];
       };
+      household_invites: {
+        Row: {
+          id: string;
+          owner_user_id: string;
+          invitee_email: string;
+          status: HouseholdInviteStatus;
+          invitee_user_id: string | null;
+          accepted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_user_id: string;
+          invitee_email: string;
+          status?: HouseholdInviteStatus;
+          invitee_user_id?: string | null;
+          accepted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_user_id?: string;
+          invitee_email?: string;
+          status?: HouseholdInviteStatus;
+          invitee_user_id?: string | null;
+          accepted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      vault_memberships: {
+        Row: {
+          id: string;
+          owner_user_id: string;
+          member_user_id: string;
+          status: VaultMembershipStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_user_id: string;
+          member_user_id: string;
+          status?: VaultMembershipStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_user_id?: string;
+          member_user_id?: string;
+          status?: VaultMembershipStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      vault_item_shares: {
+        Row: {
+          id: string;
+          owner_user_id: string;
+          member_user_id: string;
+          resource_type: VaultResourceType;
+          resource_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_user_id: string;
+          member_user_id: string;
+          resource_type: VaultResourceType;
+          resource_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_user_id?: string;
+          member_user_id?: string;
+          resource_type?: VaultResourceType;
+          resource_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       delete_own_account: {
         Args: Record<string, never>;
         Returns: undefined;
+      };
+      accept_household_invite: {
+        Args: { p_invite_id: string };
+        Returns: Database['public']['Tables']['vault_memberships']['Row'];
+      };
+      revoke_vault_membership: {
+        Args: { p_membership_id: string };
+        Returns: undefined;
+      };
+      is_active_vault_member: {
+        Args: { p_owner: string; p_member: string };
+        Returns: boolean;
+      };
+      can_view_shared_resource: {
+        Args: {
+          p_owner: string;
+          p_resource_type: VaultResourceType;
+          p_resource_id: string;
+        };
+        Returns: boolean;
       };
     };
     Enums: {
@@ -368,6 +481,9 @@ export type Database = {
       vital_type: VitalType;
       platform_health_source: PlatformHealthSource;
       platform_health_metric: PlatformHealthMetric;
+      household_invite_status: HouseholdInviteStatus;
+      vault_membership_status: VaultMembershipStatus;
+      vault_resource_type: VaultResourceType;
     };
     CompositeTypes: Record<string, never>;
   };
@@ -380,3 +496,6 @@ export type FamilyMember = Database['public']['Tables']['family_members']['Row']
 export type Vital = Database['public']['Tables']['vitals']['Row'];
 export type Medication = Database['public']['Tables']['medications']['Row'];
 export type PlatformHealthDaily = Database['public']['Tables']['platform_health_daily']['Row'];
+export type HouseholdInvite = Database['public']['Tables']['household_invites']['Row'];
+export type VaultMembership = Database['public']['Tables']['vault_memberships']['Row'];
+export type VaultItemShare = Database['public']['Tables']['vault_item_shares']['Row'];

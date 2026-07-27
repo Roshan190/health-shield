@@ -15,6 +15,7 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useSessionStore } from '@/lib/auth/session-store';
 import {
   matchesRecordQuery,
   RECORD_CATEGORIES,
@@ -31,6 +32,7 @@ type MemberFilter = 'all' | 'unassigned' | string;
 export default function RecordsListScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const user = useSessionStore((s) => s.user);
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,6 +238,7 @@ export default function RecordsListScreen() {
                     const memberName = record.family_member_id
                       ? memberById.get(record.family_member_id)?.full_name
                       : null;
+                    const isShared = Boolean(user && record.user_id !== user.id);
                     return (
                       <Animated.View
                         key={record.id}
@@ -252,9 +255,12 @@ export default function RecordsListScreen() {
                               {recordCategoryLabel(record.category)}
                               {record.record_date ? ` · ${formatDate(record.record_date)}` : ''}
                             </ThemedText>
-                            {memberName ? (
-                              <Chip label={memberName} tint="teal" icon="person" />
-                            ) : null}
+                            <View style={styles.chipRow}>
+                              {isShared ? <Chip label="Shared" tint="teal" icon="eye" /> : null}
+                              {memberName ? (
+                                <Chip label={memberName} tint="teal" icon="person" />
+                              ) : null}
+                            </View>
                             {record.tags.length > 0 ? (
                               <ThemedText
                                 type="caption"
@@ -306,5 +312,10 @@ const styles = StyleSheet.create({
   recordBody: {
     flex: 1,
     gap: Spacing.half,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.one,
   },
 });
