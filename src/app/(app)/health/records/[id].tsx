@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { AiSummaryCard } from '@/components/ai-summary-card';
@@ -29,14 +29,21 @@ import {
   recordVisual,
 } from '@/lib/records/format';
 import {
+  attachDocumentsToRecord,
   createSignedRecordUrl,
   deleteRecordDocument,
-  pickRecordDocument,
-  uploadRecordDocument,
+  deleteRecordDocumentRow,
+  listRecordDocuments,
+  pickRecordDocuments,
   type PickedRecordDoc,
 } from '@/lib/records/upload';
 import { getSupabase } from '@/lib/supabase/client';
-import type { FamilyMember, MedicalRecord, RecordCategory } from '@/lib/supabase/database.types';
+import type {
+  FamilyMember,
+  MedicalRecord,
+  MedicalRecordDocument,
+  RecordCategory,
+} from '@/lib/supabase/database.types';
 
 const schema = z.object({
   title: z.string().trim().min(1, 'Title is required'),
@@ -76,10 +83,10 @@ function isRecordFormDirty(
     tags: string;
     notes: string;
     familyMemberId: string | null;
-    pendingDoc: PickedRecordDoc | null;
+    pendingDocs: PickedRecordDoc[];
   }
 ) {
-  if (fields.pendingDoc) {
+  if (fields.pendingDocs.length > 0) {
     return true;
   }
   return (
@@ -106,7 +113,8 @@ export default function RecordDetailScreen() {
   const [notes, setNotes] = useState('');
   const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
   const [members, setMembers] = useState<FamilyMember[]>([]);
-  const [pendingDoc, setPendingDoc] = useState<PickedRecordDoc | null>(null);
+  const [pendingDocs, setPendingDocs] = useState<PickedRecordDoc[]>([]);
+  const [documents, setDocuments] = useState<MedicalRecordDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,12 +138,14 @@ export default function RecordDetailScreen() {
     if (!id) {
       return;
     }
-    const [recordRes, membersRes] = await Promise.all([
+    const [recordRes, membersRes, docsRes] = await Promise.all([
       getSupabase().from('medical_records').select('*').eq('id', id).maybeSingle(),
       getSupabase().from('family_members').select('*').order('full_name', { ascending: true }),
+      listRecordDocuments(id).catch(() => [] as MedicalRecordDocument[]),
     ]);
 
     setMembers(membersRes.data ?? []);
+    setDocuments(docsRes);
 
     if (recordRes.error) {
       setError(recordRes.error.message);
@@ -157,25 +167,67 @@ export default function RecordDetailScreen() {
   async function onPickDocument() {
     setError(null);
     try {
-      const picked = await pickRecordDocument();
-      if (picked) {
-        setPendingDoc(picked);
+      const remaining = Math.max(0, 5 - documents.length - pendingDocs.length);
+      if (remaining <= 0) {
+        setError('This record already has 5 files (max).');
+        return;
+      }
+      const picked = await pickRecordDocuments({ multiple: true, maxFiles: remaining });
+      if (picked.length) {
+        setPendingDocs((prev) => [...prev, ...picked].slice(0, 5 - documents.length));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not pick document');
     }
   }
 
-  async function onOpenDocument() {
-    if (!record?.document_path) {
-      return;
-    }
+  async function onOpenDocumentPath(path: string) {
     try {
-      const url = await createSignedRecordUrl(record.document_path);
+      const url = await createSignedRecordUrl(path);
       await Linking.openURL(url);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open document');
     }
+  }
+
+  async function onRemoveDocument(doc: MedicalRecordDocument) {
+    if (!record) {
+      return;
+    }
+    Alert.alert('Remove file?', `Remove “${doc.document_name}” from this record?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => {
+          void (async () => {
+            setSaving(true);
+            setError(null);
+            try {
+              await deleteRecordDocumentRow({
+                id: doc.id,
+                path: doc.document_path,
+                recordId: record.id,
+                wasPrimary: record.document_path === doc.document_path,
+              });
+              const [freshRecord, freshDocs] = await Promise.all([
+                getSupabase().from('medical_records').select('*').eq('id', record.id).single(),
+                listRecordDocuments(record.id),
+              ]);
+              if (freshRecord.data) {
+                hydrate(freshRecord.data);
+              }
+              setDocuments(freshDocs);
+              setStatus('File removed.');
+            } catch (e) {
+              setError(e instanceof Error ? e.message : 'Could not remove file');
+            } finally {
+              setSaving(false);
+            }
+          })();
+        },
+      },
+    ]);
   }
 
   async function onSave() {
@@ -200,21 +252,15 @@ export default function RecordDetailScreen() {
 
     setSaving(true);
     try {
-      let documentPath = record.document_path;
-      let documentName = record.document_name;
-      let documentMime = record.document_mime;
-
-      if (pendingDoc) {
-        const uploaded = await uploadRecordDocument({
+      if (pendingDocs.length > 0) {
+        await attachDocumentsToRecord({
           userId: user.id,
           recordId: record.id,
-          doc: pendingDoc,
-          previousPath: record.document_path,
+          docs: pendingDocs,
+          startSortOrder: documents.length,
+          setPrimary: documents.length === 0,
         });
-        documentPath = uploaded.path;
-        documentName = uploaded.name;
-        documentMime = uploaded.mime;
-        setPendingDoc(null);
+        setPendingDocs([]);
       }
 
       const { data, error: updateError } = await getSupabase()
@@ -226,9 +272,6 @@ export default function RecordDetailScreen() {
           tags: parseTags(parsed.data.tags),
           notes: parsed.data.notes || null,
           family_member_id: familyMemberId,
-          document_path: documentPath,
-          document_name: documentName,
-          document_mime: documentMime,
           updated_at: new Date().toISOString(),
         })
         .eq('id', record.id)
@@ -240,6 +283,7 @@ export default function RecordDetailScreen() {
       }
 
       hydrate(data);
+      setDocuments(await listRecordDocuments(record.id));
       setStatus('Record saved.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed');
@@ -249,16 +293,20 @@ export default function RecordDetailScreen() {
   }
 
   function confirmDelete() {
-    Alert.alert('Delete record?', 'This removes the record and its document from HealthShield.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          void onDelete();
+    Alert.alert(
+      'Delete record?',
+      'This removes the record and all attached documents from HealthShield.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void onDelete();
+          },
         },
-      },
-    ]);
+      ]
+    );
   }
 
   async function onDelete() {
@@ -268,8 +316,12 @@ export default function RecordDetailScreen() {
     setSaving(true);
     setError(null);
     try {
-      if (record.document_path) {
-        await deleteRecordDocument(record.document_path);
+      const paths = documents.map((d) => d.document_path);
+      if (record.document_path && !paths.includes(record.document_path)) {
+        paths.push(record.document_path);
+      }
+      for (const path of paths) {
+        await deleteRecordDocument(path);
       }
       const { error: deleteError } = await getSupabase()
         .from('medical_records')
@@ -297,7 +349,7 @@ export default function RecordDetailScreen() {
         tags,
         notes,
         familyMemberId,
-        pendingDoc,
+        pendingDocs,
       })
     ) {
       Alert.alert('Save changes first', 'Summarize uses the last saved record details, not unsaved edits.');
@@ -454,57 +506,80 @@ export default function RecordDetailScreen() {
         />
       </Card>
 
-      {/* ——— Document ——— */}
+      {/* ——— Documents ——— */}
       <Card style={styles.formCard}>
         <View style={styles.cardTitleRow}>
           <IconBadge icon="document-attach" tint="amber" size={34} />
-          <ThemedText type="section">Document</ThemedText>
+          <ThemedText type="section">Documents</ThemedText>
         </View>
-        {record.document_path ? (
-          <View style={[styles.docRow, { backgroundColor: theme.surfaceMuted }]}>
-            <IconBadge
-              icon={record.document_mime?.startsWith('image/') ? 'image' : 'document-text'}
-              tint="red"
-              size={38}
-            />
-            <View style={styles.docBody}>
-              <ThemedText type="smallBold" numberOfLines={1}>
-                {record.document_name ?? 'Document'}
-              </ThemedText>
-              <ThemedText type="caption" themeColor="textSecondary">
-                Stored in private, access-controlled storage
-              </ThemedText>
+        {documents.length > 0 ? (
+          documents.map((doc) => (
+            <View
+              key={doc.id}
+              style={[styles.docRow, { backgroundColor: theme.surfaceMuted }]}>
+              <IconBadge
+                icon={doc.document_mime.startsWith('image/') ? 'image' : 'document-text'}
+                tint="red"
+                size={38}
+              />
+              <View style={styles.docBody}>
+                <ThemedText type="smallBold" numberOfLines={1}>
+                  {doc.document_name}
+                </ThemedText>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  {record.document_path === doc.document_path ? 'Primary · ' : ''}
+                  Private storage
+                </ThemedText>
+              </View>
+              <Button
+                label="Open"
+                size="sm"
+                variant="secondary"
+                onPress={() => onOpenDocumentPath(doc.document_path)}
+                disabled={saving}
+              />
+              {isOwner ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove file"
+                  onPress={() => onRemoveDocument(doc)}
+                  disabled={saving}
+                  hitSlop={8}
+                  style={styles.removeDocBtn}>
+                  <Ionicons name="trash-outline" size={18} color={theme.danger} />
+                </Pressable>
+              ) : null}
             </View>
-            <Button
-              label="Open"
-              size="sm"
-              variant="secondary"
-              onPress={onOpenDocument}
-              disabled={saving}
-            />
-          </View>
+          ))
         ) : (
           <ThemedText type="small" themeColor="textSecondary">
-            No document attached yet.
+            No documents attached yet. Add a scan and report together on one record.
           </ThemedText>
         )}
-        {pendingDoc && isOwner ? (
-          <Chip label={`Replace with: ${pendingDoc.name}`} tint="blue" icon="attach" />
-        ) : null}
+        {pendingDocs.length > 0 && isOwner
+          ? pendingDocs.map((doc) => (
+              <Chip
+                key={`${doc.uri}-${doc.name}`}
+                label={`Pending: ${doc.name}`}
+                tint="blue"
+                icon="attach"
+              />
+            ))
+          : null}
         {isOwner ? (
           <Button
             label={
-              pendingDoc
-                ? 'Choose a different file'
-                : record.document_path
-                  ? 'Replace document'
-                  : 'Attach PDF or image'
+              pendingDocs.length
+                ? 'Add more files'
+                : documents.length
+                  ? 'Add PDF or images'
+                  : 'Attach PDF or images'
             }
             icon="cloud-upload"
             variant="secondary"
             size="md"
             onPress={onPickDocument}
-            disabled={saving}
+            disabled={saving || documents.length + pendingDocs.length >= 5}
           />
         ) : null}
       </Card>
@@ -580,6 +655,9 @@ const styles = StyleSheet.create({
   docBody: {
     flex: 1,
     gap: Spacing.half,
+  },
+  removeDocBtn: {
+    padding: Spacing.one,
   },
   noticeRow: {
     flexDirection: 'row',

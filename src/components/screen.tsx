@@ -13,6 +13,8 @@ type ScreenProps = PropsWithChildren<
     /** Rendered to the right of the title (e.g. an icon badge or action). */
     headerRight?: ReactNode;
     scroll?: boolean;
+    /** When scroll is true, can temporarily lock scrolling (e.g. while panning a map). */
+    scrollEnabled?: boolean;
   }
 >;
 
@@ -21,6 +23,7 @@ export function Screen({
   subtitle,
   headerRight,
   scroll = true,
+  scrollEnabled = true,
   children,
   style,
   ...rest
@@ -51,7 +54,9 @@ export function Screen({
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled">
+            keyboardShouldPersistTaps="handled"
+            scrollEnabled={scrollEnabled}
+            nestedScrollEnabled>
             {body}
           </ScrollView>
         ) : (

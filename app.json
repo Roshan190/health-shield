@@ -80,7 +80,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "HealthShield uses your location only while an SOS is active so you can share it with people you choose. We do not track you in the background.",
+          "locationWhenInUsePermission": "HealthShield uses your location while SOS is active or when you look up nearby hospitals. We do not track you in the background.",
           "isAndroidBackgroundLocationEnabled": false,
           "isIosBackgroundLocationEnabled": false
         }

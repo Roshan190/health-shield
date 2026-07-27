@@ -6,6 +6,69 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 ---
 
+## D-024 — Nearby hospitals list + user preferred (override)
+
+**Status:** Accepted (2026-07-27) — founder override after D-023 park; **amended: Mapbox Search + Mapbox Maps UI (no Google Maps key)**
+
+**Context:** D-023 parked cashless maps. Founder wants a feedback-ready hospital feature: nearby list plus user-marked preferred hospitals (self-tagged cashless / go-to), not insurer network verification. First cut used free OSM Overpass; founder reported flaky results and map press crashes on deployed Android — switched data source to Mapbox Search Box. Black Android map with `react-native-maps` required a Google Maps SDK key (billing account); founder rejected Google billing → switched map **UI** to `@rnmapbox/maps`.
+
+**Decision — in scope:**
+- **N1** Nearby hospitals via **Mapbox Search Box** category API (`hospital` / `clinic`) through Edge Function `nearby-hospitals` — secret `MAPBOX_ACCESS_TOKEN` (Edge only; never in the app)
+- **N2** In-app **List** and **Map** toggle; map UI = **Mapbox GL JS in a WebView** (Streets); public `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (`pk.` only); works in Expo Go; **Open in Maps** for navigation
+- **N3** User can **mark / unmark preferred** hospitals; stored in `preferred_hospitals` (owner RLS)
+- Foreground location only; entry from Emergency hub (`/emergency/hospitals`)
+- Copy: “Nearby” ≠ cashless network; “Preferred” = what the user marked — confirm with insurer
+- **No star ratings**
+- **Parked:** OpenStreetMap Overpass; Google Places; Google Maps SDK / `react-native-maps`; `@rnmapbox/maps` native SDK (needs custom dev client — WebView Mapbox preferred for Expo Go)
+
+**Explicitly deferred:** Insurer-verified cashless matching, curated global hospital DB, hospital ratings/reviews, ambulance, auto-call 112, policy↔hospital FK matrix.
+
+**Why (founder):** Mapbox for both search + tiles avoids Google Maps billing; WebView Mapbox avoids native rebuild / Expo Go crash from `@rnmapbox/maps`.
+
+**Consequences:** Founder must set Edge `MAPBOX_ACCESS_TOKEN` (list) and app `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (pk. for map tiles), then restart Expo. Mapbox free tier covers early usage. Do not market as cashless finder. Do not invent ratings.
+
+---
+
+## D-023 — Phase P exit: policy PDF draft smoked; PDF-first Add policy
+
+**Status:** Accepted (2026-07-27) — founder confirmation (Draft from PDF works; PDF-first UX)
+
+**Context:** D-022 thin policy PDF field draft shipped. Founder confirmed extraction works on a real policy PDF. Asked to put PDF upload first on Add policy, then park further product work.
+
+**Decision:**
+- Mark Phase P / D-022 exit met.
+- Add policy leads with **Attach PDF → Draft fields from PDF**; form fields follow for review. Manual entry remains available without a PDF.
+- **Park for later (no next build track):** email invite delivery, medical-record OCR, PDF Q&A / chat, cashless hospital maps, general polish, Phase 5+ claims / doctor portal, Play category + leaked-password ops (founder Console when ready).
+
+**Why (founder):** OCR path works; prefer PDF-first create; rest not now.
+
+**Consequences:** No automatic blueprint Phase 5. Further product work needs an explicit new decision. Agents must not start hospitals, chat, claims, or record OCR without one.
+
+---
+
+## D-022 — Thin policy PDF field draft (OCR)
+
+**Status:** Accepted (2026-07-27) — founder chose this after Phase H exit (D-021); **exited via D-023**
+
+**Context:** Policy PDF attach/store already works. Manual form entry is still required. D-019 / D-020 deferred PDF/OCR; Summarize never reads documents. Founder wants “create policy from PDF” as a draft assist — policies only.
+
+**Decision — in scope:**
+- **P1** On Add policy (`/policies/new`): after attaching a PDF, **Draft fields from PDF** prefills form fields for review
+- Extraction via Supabase Edge Function `extract-policy-fields`; `OPENAI_API_KEY` is a function secret only — never in the app
+- Model: `gpt-4o-mini` + PDF input + strict JSON for form fields (insurer, policy number, type, amounts, dates, nominee, premium frequency)
+- PDF is uploaded to private `policy-docs` under `{userId}/ocr-temp/…`, then downloaded by the function with the user JWT (RLS); **PDF content is sent to OpenAI for this cut** (unlike Summarize)
+- User **must** review/edit before Save; null/omit unclear fields; never invent coverage, benefits, or diagnoses
+- India-first: INR amounts as plain numbers; dates normalized to `YYYY-MM-DD`
+- Cost: pay-per-extract; no batch/cron; no server-side draft persistence
+
+**Explicitly deferred:** Medical-record OCR, OCR on policy edit/detail, claim guidance, coverage interpretation, auto-save without review, chat, changing `summarize-item` to read PDFs, email parsing.
+
+**Why (founder):** Reduce typing when the PDF already exists; keep human review as the source of truth.
+
+**Consequences:** Agents must not expand OCR to records or claims without a new decision. Product copy must say draft may be wrong/incomplete and is not insurance advice.
+
+---
+
 ## D-021 — Household invite / share exit (D-018 smoke)
 
 **Status:** Accepted (2026-07-27) — founder confirmation

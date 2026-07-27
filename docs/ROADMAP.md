@@ -297,11 +297,66 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 
 ---
 
+## Phase P — Policy PDF field draft (D-022)
+
+**Entered:** 2026-07-27 after household invite/share exit (**D-021**). Cut locked in **D-022**.
+
+**Goal:** User attaches a policy PDF on Add policy; the app drafts form fields for review before save. Assistive only — never invent coverage. Policies only.
+
+### Slice P1 — Draft from PDF on Add policy
+
+- Attach PDF (existing) → **Draft fields from PDF**
+- Edge Function `extract-policy-fields` downloads from `policy-docs` ocr-temp path → OpenAI PDF extract → JSON fields
+- Prefill Add policy form; banner: review before save
+- Save unchanged: insert row + permanent PDF upload; clean up ocr-temp
+
+### Phase P exit criteria
+
+1. Draft from PDF prefills at least some fields on a real India-style policy PDF when `OPENAI_API_KEY` is set
+2. User can edit all fields before save; unclear fields stay empty (no invented coverage)
+3. No OpenAI key in git or client bundle; medical-record OCR still out
+4. `PROGRESS.md` updated
+
+**Deferred:** Record OCR, edit-screen OCR, claim/coverage interpretation, auto-save.
+
+**Closed:** 2026-07-27 via **D-023** (founder smoke OK; PDF-first Add policy polish).
+
+---
+
+## Phase N — Nearby hospitals + preferred (D-024)
+
+**Entered:** 2026-07-27 after Phase P exit (**D-023**). Cut locked in **D-024**.
+
+**Goal:** Show hospitals near the user (Mapbox Search + Mapbox map UI) and let them mark preferred ones. Honest copy — not insurer cashless.
+
+### Slice N1 — Nearby list + map
+
+- Edge Function `nearby-hospitals` (Mapbox Search Box; secret `MAPBOX_ACCESS_TOKEN`) + foreground location
+- List / Map toggle with Mapbox GL JS WebView (public `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN`); Open in Maps from Emergency hub
+- No ratings; OSM / Google Maps / `@rnmapbox/maps` parked
+
+### Slice N2 — Preferred hospitals
+
+- Save/unsave from list or map → `preferred_hospitals` (owner RLS)
+- Preferred section visible even if location denied
+
+### Exit criteria
+
+1. Nearby list works with location (Mapbox Search; `MAPBOX_ACCESS_TOKEN` set)
+2. Map view shows Mapbox tiles + pins (WebView); List/Map toggle works in Expo Go
+3. Preferred mark/unmark persists; Open in Maps works
+4. Copy does not claim insurer-verified cashless or invent ratings
+5. `PROGRESS.md` updated
+
+**Deferred:** Google Maps/Places / ratings, insurer network APIs, ambulance.
+
+---
+
 ## Phase 5+ — Claims, doctor portal, premium, enterprise
 
 Do **not** start early. Blueprint Phases 5–8 stay deferred until a thin cut + override is recorded in `DECISIONS.md`.
 
-**Recent exits:** Phase 4 AI thin cut (**D-020**); household invite/share (**D-021**).
+**Recent exits:** Phase 4 AI (**D-020**); household (**D-021**); policy PDF (**D-023**). Phase N (nearby hospitals) in progress via **D-024**.
 
 ---
 

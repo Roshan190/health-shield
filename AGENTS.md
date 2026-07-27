@@ -17,9 +17,9 @@ Full ambition: `docs/project-blueprint.md`
 ## Current reality (do not invent otherwise)
 
 - Phase 1 exit **D-010**. Phase 2 exit **D-014**. Phase 3 exit **D-016** (Android SOS smoke; iOS parked). Cut = **D-015**. Nav = **D-012**; brand = **D-013**. See `PROGRESS.md` + `ROADMAP.md`.
-- **Phase Q2 deepen complete (D-017)**. **Phase 4 thin AI exited (D-019 / D-020)**. **Household invite/share exited (D-018 / D-021)** — invite by email → accept → explicit policy/record share → view-only → revoke.
-- Solo founder. Mobile-first Expo SDK **57**. Backend = Supabase project `health-shield` (profiles, policies, records, family, vitals, medications, `platform_health_daily`, emergency/export, `summarize-item`, household invites / vault shares).
-- Health Connect / Apple Health need a **dev-client / EAS build** (not Expo Go). SOS uses foreground location + SMS/Share only — no background tracking. OpenAI key is Edge Function secret only — never in the app. `family_member_id` remains organize-only; real sharing is D-018.
+- **Phase Q2 deepen complete (D-017)**. **Phase 4 thin AI exited (D-019 / D-020)**. **Household invite/share exited (D-018 / D-021)**. **Phase P policy PDF draft exited (D-022 / D-023)**. **Phase N nearby hospitals in progress (D-024)** — Mapbox Search + Mapbox WebView map; Google Maps/Places/OSM/@rnmapbox native parked; not insurer cashless.
+- Solo founder. Mobile-first Expo SDK **57**. Backend = Supabase project `health-shield` (profiles, policies, records, family, vitals, medications, `platform_health_daily`, emergency/export, `summarize-item`, `extract-policy-fields`, `nearby-hospitals`, `preferred_hospitals`, household invites / vault shares).
+- Health Connect / Apple Health need a **dev-client / EAS build** (not Expo Go). SOS uses foreground location + SMS/Share only — no background tracking. OpenAI + Mapbox Search tokens are Edge Function secrets only. In-app map uses public `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (`pk.`) via WebView Mapbox GL (Expo Go OK). `family_member_id` remains organize-only; real sharing is D-018.
 - Phase 0 closed via D-007 without real user interviews — do not cite synthetic notes as validated research. Real feedback log started (R1 in `docs/research/user-notes.md`).
 - iOS Apple Health + SOS runtime remain parked (D-014 / D-016) until device access exists.
 

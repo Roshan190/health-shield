@@ -196,6 +196,47 @@ export type Database = {
           },
         ];
       };
+      medical_record_documents: {
+        Row: {
+          id: string;
+          record_id: string;
+          user_id: string;
+          document_path: string;
+          document_name: string;
+          document_mime: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          record_id: string;
+          user_id: string;
+          document_path: string;
+          document_name: string;
+          document_mime: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          record_id?: string;
+          user_id?: string;
+          document_path?: string;
+          document_name?: string;
+          document_mime?: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'medical_record_documents_record_id_fkey';
+            columns: ['record_id'];
+            isOneToOne: false;
+            referencedRelation: 'medical_records';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       family_members: {
         Row: {
           id: string;
@@ -445,6 +486,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      preferred_hospitals: {
+        Row: {
+          id: string;
+          user_id: string;
+          place_id: string;
+          name: string;
+          address: string | null;
+          latitude: number;
+          longitude: number;
+          maps_url: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          place_id: string;
+          name: string;
+          address?: string | null;
+          latitude: number;
+          longitude: number;
+          maps_url?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          place_id?: string;
+          name?: string;
+          address?: string | null;
+          latitude?: number;
+          longitude?: number;
+          maps_url?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -492,6 +575,7 @@ export type Database = {
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Policy = Database['public']['Tables']['policies']['Row'];
 export type MedicalRecord = Database['public']['Tables']['medical_records']['Row'];
+export type MedicalRecordDocument = Database['public']['Tables']['medical_record_documents']['Row'];
 export type FamilyMember = Database['public']['Tables']['family_members']['Row'];
 export type Vital = Database['public']['Tables']['vitals']['Row'];
 export type Medication = Database['public']['Tables']['medications']['Row'];
@@ -499,3 +583,4 @@ export type PlatformHealthDaily = Database['public']['Tables']['platform_health_
 export type HouseholdInvite = Database['public']['Tables']['household_invites']['Row'];
 export type VaultMembership = Database['public']['Tables']['vault_memberships']['Row'];
 export type VaultItemShare = Database['public']['Tables']['vault_item_shares']['Row'];
+export type PreferredHospital = Database['public']['Tables']['preferred_hospitals']['Row'];

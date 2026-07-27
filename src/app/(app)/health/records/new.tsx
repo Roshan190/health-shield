@@ -18,8 +18,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { useSessionStore } from '@/lib/auth/session-store';
 import { parseTags, RECORD_CATEGORIES } from '@/lib/records/format';
 import {
-  pickRecordDocument,
-  uploadRecordDocument,
+  attachDocumentsToRecord,
+  pickRecordDocuments,
   type PickedRecordDoc,
 } from '@/lib/records/upload';
 import { getSupabase } from '@/lib/supabase/client';
@@ -57,7 +57,7 @@ export default function NewRecordScreen() {
   const [notes, setNotes] = useState('');
   const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
   const [members, setMembers] = useState<FamilyMember[]>([]);
-  const [doc, setDoc] = useState<PickedRecordDoc | null>(null);
+  const [docs, setDocs] = useState<PickedRecordDoc[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -82,9 +82,9 @@ export default function NewRecordScreen() {
   async function onPickDocument() {
     setError(null);
     try {
-      const picked = await pickRecordDocument();
-      if (picked) {
-        setDoc(picked);
+      const picked = await pickRecordDocuments({ multiple: true, maxFiles: 5 });
+      if (picked.length) {
+        setDocs(picked);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not pick document');
@@ -131,25 +131,14 @@ export default function NewRecordScreen() {
         throw insertError ?? new Error('Could not create record');
       }
 
-      if (doc) {
-        const uploaded = await uploadRecordDocument({
+      if (docs.length > 0) {
+        await attachDocumentsToRecord({
           userId: user.id,
           recordId: created.id,
-          doc,
+          docs,
+          startSortOrder: 0,
+          setPrimary: true,
         });
-        const { error: updateError } = await getSupabase()
-          .from('medical_records')
-          .update({
-            document_path: uploaded.path,
-            document_name: uploaded.name,
-            document_mime: uploaded.mime,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', created.id);
-
-        if (updateError) {
-          throw updateError;
-        }
       }
 
       router.replace(`/health/records/${created.id}`);
@@ -236,29 +225,34 @@ export default function NewRecordScreen() {
           <IconBadge icon="document-attach" tint="amber" size={34} />
           <ThemedText type="section">Document</ThemedText>
         </View>
-        {doc ? (
-          <View style={[styles.docRow, { backgroundColor: theme.surfaceMuted }]}>
-            <IconBadge
-              icon={doc.mimeType.startsWith('image/') ? 'image' : 'document-text'}
-              tint="red"
-              size={38}
-            />
-            <View style={styles.docBody}>
-              <ThemedText type="smallBold" numberOfLines={1}>
-                {doc.name}
-              </ThemedText>
-              <ThemedText type="caption" themeColor="textSecondary">
-                Will upload to private storage on save
-              </ThemedText>
+        {docs.length > 0 ? (
+          docs.map((doc) => (
+            <View
+              key={`${doc.uri}-${doc.name}`}
+              style={[styles.docRow, { backgroundColor: theme.surfaceMuted }]}>
+              <IconBadge
+                icon={doc.mimeType.startsWith('image/') ? 'image' : 'document-text'}
+                tint="red"
+                size={38}
+              />
+              <View style={styles.docBody}>
+                <ThemedText type="smallBold" numberOfLines={1}>
+                  {doc.name}
+                </ThemedText>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  Attached to this record on save
+                </ThemedText>
+              </View>
             </View>
-          </View>
+          ))
         ) : (
           <ThemedText type="small" themeColor="textSecondary">
-            PDF or photo (JPEG, PNG, WebP, HEIC), up to 10MB.
+            PDF or photo (JPEG, PNG, WebP, HEIC), up to 10MB each. You can attach up to 5 files to
+            the same record (e.g. scan + report).
           </ThemedText>
         )}
         <Button
-          label={doc ? 'Choose a different file' : 'Attach PDF or image'}
+          label={docs.length ? 'Choose different files' : 'Attach PDF or images'}
           icon="cloud-upload"
           variant="secondary"
           size="md"
@@ -276,7 +270,12 @@ export default function NewRecordScreen() {
         </Card>
       ) : null}
 
-      <Button label="Save record" icon="checkmark" loading={saving} onPress={onSave} />
+      <Button
+        label={docs.length > 1 ? `Save record with ${docs.length} files` : 'Save record'}
+        icon="checkmark"
+        loading={saving}
+        onPress={onSave}
+      />
       <Button label="Cancel" variant="ghost" onPress={() => router.back()} disabled={saving} />
     </Screen>
   );

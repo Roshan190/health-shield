@@ -6,7 +6,9 @@ export type LocationPermissionResult =
   | { ok: true }
   | { ok: false; message: string; canAskAgain: boolean };
 
-export async function ensureForegroundLocationPermission(): Promise<LocationPermissionResult> {
+export async function ensureForegroundLocationPermission(
+  reason: 'sos' | 'hospitals' = 'sos'
+): Promise<LocationPermissionResult> {
   const current = await Location.getForegroundPermissionsAsync();
   if (current.granted) {
     return { ok: true };
@@ -17,12 +19,19 @@ export async function ensureForegroundLocationPermission(): Promise<LocationPerm
     return { ok: true };
   }
 
+  const message =
+    reason === 'hospitals'
+      ? requested.canAskAgain
+        ? 'Location permission is needed to show hospitals near you.'
+        : 'Location is blocked. Enable it in system Settings for HealthShield, then try again.'
+      : requested.canAskAgain
+        ? 'Location permission is needed to share where you are during an SOS.'
+        : 'Location is blocked. Enable it in system Settings for HealthShield, then try again.';
+
   return {
     ok: false,
     canAskAgain: requested.canAskAgain,
-    message: requested.canAskAgain
-      ? 'Location permission is needed to share where you are during an SOS.'
-      : 'Location is blocked. Enable it in system Settings for HealthShield, then try again.',
+    message,
   };
 }
 

@@ -16,6 +16,12 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSessionStore } from '@/lib/auth/session-store';
+import {
+  deleteOcrTempPdf,
+  extractPolicyFields,
+  ExtractPolicyError,
+  uploadOcrTempPdf,
+} from '@/lib/policies/extract';
 import { POLICY_TYPES, PREMIUM_FREQUENCIES } from '@/lib/policies/format';
 import { pickPolicyPdf, uploadPolicyPdf, type PickedPdf } from '@/lib/policies/upload';
 import { getSupabase } from '@/lib/supabase/client';
@@ -73,8 +79,11 @@ export default function NewPolicyScreen() {
   const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [pdf, setPdf] = useState<PickedPdf | null>(null);
+  const [ocrTempPath, setOcrTempPath] = useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [extracting, setExtracting] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -99,10 +108,76 @@ export default function NewPolicyScreen() {
     try {
       const picked = await pickPolicyPdf();
       if (picked) {
+        if (ocrTempPath) {
+          await deleteOcrTempPdf(ocrTempPath);
+          setOcrTempPath(null);
+        }
         setPdf(picked);
+        setDraftNotice(null);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not pick PDF');
+    }
+  }
+
+  async function onDraftFromPdf() {
+    if (!user) {
+      setError('Not signed in');
+      return;
+    }
+    if (!pdf) {
+      setError('Attach a policy PDF first');
+      return;
+    }
+
+    setError(null);
+    setExtracting(true);
+    let uploadedPath: string | null = ocrTempPath;
+    try {
+      if (!uploadedPath) {
+        uploadedPath = await uploadOcrTempPdf({ userId: user.id, pdf });
+        setOcrTempPath(uploadedPath);
+      }
+
+      const { draft, disclaimer } = await extractPolicyFields(uploadedPath);
+
+      if (draft.insurer) {
+        setInsurer(draft.insurer);
+      }
+      if (draft.policy_number) {
+        setPolicyNumber(draft.policy_number);
+      }
+      if (draft.policy_type) {
+        setPolicyType(draft.policy_type);
+      }
+      if (draft.sum_insured != null) {
+        setSumInsured(String(draft.sum_insured));
+      }
+      if (draft.premium_amount != null) {
+        setPremiumAmount(String(draft.premium_amount));
+      }
+      if (draft.premium_frequency) {
+        setPremiumFrequency(draft.premium_frequency);
+      }
+      if (draft.start_date) {
+        setStartDate(draft.start_date);
+      }
+      if (draft.renewal_date) {
+        setRenewalDate(draft.renewal_date);
+      }
+      if (draft.nominee) {
+        setNominee(draft.nominee);
+      }
+
+      setDraftNotice(disclaimer);
+    } catch (e) {
+      if (e instanceof ExtractPolicyError) {
+        setError(e.message);
+      } else {
+        setError(e instanceof Error ? e.message : 'Could not draft fields from PDF');
+      }
+    } finally {
+      setExtracting(false);
     }
   }
 
@@ -187,6 +262,11 @@ export default function NewPolicyScreen() {
         }
       }
 
+      if (ocrTempPath) {
+        await deleteOcrTempPdf(ocrTempPath);
+        setOcrTempPath(null);
+      }
+
       router.replace(`/policies/${created.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed');
@@ -198,8 +278,60 @@ export default function NewPolicyScreen() {
   return (
     <Screen
       title="Add policy"
-      subtitle="Type the details from your policy document."
+      subtitle="Start with your policy PDF — draft fields, review, then save."
       headerRight={<IconBadge icon="shield-checkmark" tint="blue" size={44} />}>
+      {/* ——— Document first (D-023) ——— */}
+      <Card style={styles.formCard}>
+        <View style={styles.cardTitleRow}>
+          <IconBadge icon="document-attach" tint="amber" size={34} />
+          <ThemedText type="section">Policy PDF</ThemedText>
+        </View>
+        {pdf ? (
+          <View style={[styles.docRow, { backgroundColor: theme.surfaceMuted }]}>
+            <IconBadge icon="document-text" tint="red" size={38} />
+            <View style={styles.docBody}>
+              <ThemedText type="smallBold" numberOfLines={1}>
+                {pdf.name}
+              </ThemedText>
+              <ThemedText type="caption" themeColor="textSecondary">
+                Draft fields below, review, then save — PDF uploads with the policy
+              </ThemedText>
+            </View>
+          </View>
+        ) : (
+          <ThemedText type="small" themeColor="textSecondary">
+            Attach the policy schedule or certificate. You can draft the form from it, or skip and
+            type details manually.
+          </ThemedText>
+        )}
+        <Button
+          label={pdf ? 'Choose a different PDF' : 'Attach policy PDF'}
+          icon="cloud-upload"
+          variant={pdf ? 'secondary' : 'primary'}
+          size="md"
+          onPress={onPickPdf}
+          disabled={saving || extracting}
+        />
+        {pdf ? (
+          <Button
+            label="Draft fields from PDF"
+            icon="sparkles"
+            size="md"
+            loading={extracting}
+            onPress={onDraftFromPdf}
+            disabled={saving || extracting}
+          />
+        ) : null}
+        {draftNotice ? (
+          <Card variant="muted" style={styles.noticeRow}>
+            <Ionicons name="information-circle" size={18} color={theme.primary} />
+            <ThemedText type="small" themeColor="textSecondary" style={styles.noticeText}>
+              {draftNotice}
+            </ThemedText>
+          </Card>
+        ) : null}
+      </Card>
+
       {/* ——— Policy details ——— */}
       <Card style={styles.formCard}>
         <View style={styles.cardTitleRow}>
@@ -231,7 +363,7 @@ export default function NewPolicyScreen() {
               label={type.label}
               selected={policyType === type.value}
               onPress={() => setPolicyType(type.value)}
-              disabled={saving}
+              disabled={saving || extracting}
             />
           ))}
         </View>
@@ -269,7 +401,7 @@ export default function NewPolicyScreen() {
               label={freq.replace('_', ' ')}
               selected={premiumFrequency === freq}
               onPress={() => setPremiumFrequency(freq)}
-              disabled={saving}
+              disabled={saving || extracting}
             />
           ))}
         </View>
@@ -298,7 +430,7 @@ export default function NewPolicyScreen() {
           members={members}
           value={familyMemberId}
           onChange={setFamilyMemberId}
-          disabled={saving}
+          disabled={saving || extracting}
           label="Covered member"
           hint="Optional. Who this policy primarily covers in your household."
           emptyHint="Add someone under Family to link cover to them. Profiles stay on your account — they do not get a separate login yet."
@@ -321,39 +453,6 @@ export default function NewPolicyScreen() {
         />
       </Card>
 
-      {/* ——— Document ——— */}
-      <Card style={styles.formCard}>
-        <View style={styles.cardTitleRow}>
-          <IconBadge icon="document-attach" tint="amber" size={34} />
-          <ThemedText type="section">Policy document</ThemedText>
-        </View>
-        {pdf ? (
-          <View style={[styles.docRow, { backgroundColor: theme.surfaceMuted }]}>
-            <IconBadge icon="document-text" tint="red" size={38} />
-            <View style={styles.docBody}>
-              <ThemedText type="smallBold" numberOfLines={1}>
-                {pdf.name}
-              </ThemedText>
-              <ThemedText type="caption" themeColor="textSecondary">
-                Will upload to private storage on save
-              </ThemedText>
-            </View>
-          </View>
-        ) : (
-          <ThemedText type="small" themeColor="textSecondary">
-            Optional, but recommended — keep the original PDF safe with the policy.
-          </ThemedText>
-        )}
-        <Button
-          label={pdf ? 'Choose a different PDF' : 'Attach policy PDF'}
-          icon="cloud-upload"
-          variant="secondary"
-          size="md"
-          onPress={onPickPdf}
-          disabled={saving}
-        />
-      </Card>
-
       {error ? (
         <Card variant="muted" style={styles.noticeRow}>
           <Ionicons name="alert-circle" size={18} color={theme.danger} />
@@ -363,8 +462,19 @@ export default function NewPolicyScreen() {
         </Card>
       ) : null}
 
-      <Button label="Save policy" icon="checkmark" loading={saving} onPress={onSave} />
-      <Button label="Cancel" variant="ghost" onPress={() => router.back()} disabled={saving} />
+      <Button
+        label="Save policy"
+        icon="checkmark"
+        loading={saving}
+        onPress={onSave}
+        disabled={extracting}
+      />
+      <Button
+        label="Cancel"
+        variant="ghost"
+        onPress={() => router.back()}
+        disabled={saving || extracting}
+      />
     </Screen>
   );
 }
