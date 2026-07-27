@@ -9,11 +9,13 @@ import { Card, PressableCard } from '@/components/card';
 import { Chip } from '@/components/chip';
 import { EmptyState } from '@/components/empty-state';
 import { IconBadge } from '@/components/icon-badge';
+import { ReminderStatusCard } from '@/components/reminder-status-card';
 import { Screen } from '@/components/screen';
 import { SkeletonCard } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { syncRenewalNotifications } from '@/lib/notifications/renewals';
 import {
   formatInrCompact,
   isRenewalSoon,
@@ -23,30 +25,45 @@ import {
 } from '@/lib/policies/format';
 import { policyVisual, RENEWAL_TONE_TINT } from '@/lib/policies/visuals';
 import { getSupabase } from '@/lib/supabase/client';
-import type { Policy } from '@/lib/supabase/database.types';
+import type { FamilyMember, Policy } from '@/lib/supabase/database.types';
 
 export default function PoliciesListScreen() {
   const router = useRouter();
   const theme = useTheme();
   const [policies, setPolicies] = useState<Policy[]>([]);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const memberById = useMemo(() => {
+    const map = new Map<string, FamilyMember>();
+    for (const member of members) {
+      map.set(member.id, member);
+    }
+    return map;
+  }, [members]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: loadError } = await getSupabase()
-      .from('policies')
-      .select('*')
-      .order('renewal_date', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false });
+    const [policiesRes, membersRes] = await Promise.all([
+      getSupabase()
+        .from('policies')
+        .select('*')
+        .order('renewal_date', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false }),
+      getSupabase().from('family_members').select('*').order('full_name', { ascending: true }),
+    ]);
 
-    if (loadError) {
-      setError(loadError.message);
+    if (policiesRes.error) {
+      setError(policiesRes.error.message);
       setPolicies([]);
     } else {
-      setPolicies(data ?? []);
+      const rows = policiesRes.data ?? [];
+      setPolicies(rows);
+      void syncRenewalNotifications(rows);
     }
+    setMembers(membersRes.data ?? []);
     setLoading(false);
   }, []);
 
@@ -59,7 +76,8 @@ export default function PoliciesListScreen() {
   const summary = useMemo(() => {
     const totalCover = policies.reduce((sum, p) => sum + (p.sum_insured ?? 0), 0);
     const dueSoon = policies.filter((p) => isRenewalSoon(p.renewal_date, 60)).length;
-    return { totalCover, dueSoon };
+    const withRenewal = policies.some((p) => Boolean(p.renewal_date));
+    return { totalCover, dueSoon, withRenewal };
   }, [policies]);
 
   return (
@@ -135,10 +153,20 @@ export default function PoliciesListScreen() {
             </View>
           </Card>
 
+          {summary.withRenewal ? (
+            <ReminderStatusCard
+              detail="Renewal alerts fire 30 days, 7 days, and on the renewal date (local, 9:00)."
+              hideWhenGranted
+            />
+          ) : null}
+
           <View style={styles.list}>
             {policies.map((policy, index) => {
               const visual = policyVisual(policy.policy_type);
               const tone = renewalTone(policy.renewal_date);
+              const memberName = policy.family_member_id
+                ? memberById.get(policy.family_member_id)?.full_name
+                : null;
               return (
                 <Animated.View
                   key={policy.id}
@@ -158,6 +186,7 @@ export default function PoliciesListScreen() {
                       </View>
                       <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
                         № {policy.policy_number}
+                        {memberName ? ` · ${memberName}` : ''}
                       </ThemedText>
                       <View style={styles.policyBottomRow}>
                         <ThemedText type="smallBold">
@@ -192,6 +221,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: Spacing.two,
   },
   summaryItem: {
     flex: 1,

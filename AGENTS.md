@@ -16,11 +16,13 @@ Full ambition: `docs/project-blueprint.md`
 
 ## Current reality (do not invent otherwise)
 
-- Phase 1 exit **D-010**. Phase 2 exit **D-014** (Android smoked; Apple Health code-complete, **iOS test pending**). Cut = **D-011**. Nav = **D-012**; brand = **D-013**. Next = Phase 3 Emergency. See `PROGRESS.md` + `ROADMAP.md`.
+- Phase 1 exit **D-010**. Phase 2 exit **D-014**. Phase 3 exit **D-016** (Android SOS smoke; iOS parked). Cut = **D-015**. Nav = **D-012**; brand = **D-013**. See `PROGRESS.md` + `ROADMAP.md`.
+- **Phase Q2 deepen Foundation complete (D-017)** — notifications, records/policy↔member, family clarity, ops hygiene. Phase 4 AI deferred. **Next fork: D-018** household invite/share (pending) vs Phase 4 AI.
 - Solo founder. Mobile-first Expo SDK **57**. Backend = Supabase project `health-shield` (profiles, policies, records, family, vitals, medications, `platform_health_daily`, emergency/export).
-- Health Connect / Apple Health need a **dev-client / EAS build** (not Expo Go). Not building AI, claims, or doctor portal yet. No Fitbit/Garmin/Samsung clones in 2.x.
-- Phase 0 closed via D-007 without real user interviews — do not cite synthetic notes as validated research.
-- Smoke Apple Health on a real iPhone when access exists (D-014).
+- Health Connect / Apple Health need a **dev-client / EAS build** (not Expo Go). SOS uses foreground location + SMS/Share only — no background tracking. No invite/shared RLS yet (D-008).
+- Phase 0 closed via D-007 without real user interviews — do not cite synthetic notes as validated research. Real feedback log started (R1 in `docs/research/user-notes.md`).
+- iOS Apple Health + SOS runtime remain parked (D-014 / D-016) until device access exists.
+
 
 Before any implementation: read `docs/PROGRESS.md`.
 

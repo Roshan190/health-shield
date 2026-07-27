@@ -2,6 +2,7 @@ import { Share } from 'react-native';
 
 import { clearAppleHealthPrefs } from '@/lib/apple-health/preferences';
 import { clearEmergencyCardSnapshot } from '@/lib/emergency/card-store';
+import { clearSosSession } from '@/lib/emergency/sos-session';
 import { clearHealthConnectPrefs } from '@/lib/health-connect/preferences';
 import { getSupabase } from '@/lib/supabase/client';
 
@@ -115,6 +116,7 @@ export async function deleteAccountCompletely(userId: string) {
   ]);
 
   await clearEmergencyCardSnapshot();
+  await clearSosSession();
   await clearHealthConnectPrefs();
   await clearAppleHealthPrefs();
 

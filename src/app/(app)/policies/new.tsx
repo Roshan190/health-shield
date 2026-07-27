@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { SelectChip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
+import { FamilyMemberPicker } from '@/components/family-member-picker';
 import { IconBadge } from '@/components/icon-badge';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
@@ -18,7 +19,7 @@ import { useSessionStore } from '@/lib/auth/session-store';
 import { POLICY_TYPES, PREMIUM_FREQUENCIES } from '@/lib/policies/format';
 import { pickPolicyPdf, uploadPolicyPdf, type PickedPdf } from '@/lib/policies/upload';
 import { getSupabase } from '@/lib/supabase/client';
-import type { PolicyType } from '@/lib/supabase/database.types';
+import type { FamilyMember, PolicyType } from '@/lib/supabase/database.types';
 
 const optionalDate = z
   .string()
@@ -69,9 +70,29 @@ export default function NewPolicyScreen() {
   const [renewalDate, setRenewalDate] = useState('');
   const [nominee, setNominee] = useState('');
   const [notes, setNotes] = useState('');
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [pdf, setPdf] = useState<PickedPdf | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        const { data } = await getSupabase()
+          .from('family_members')
+          .select('*')
+          .order('full_name', { ascending: true });
+        if (active) {
+          setMembers(data ?? []);
+        }
+      })();
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   async function onPickPdf() {
     setError(null);
@@ -137,6 +158,7 @@ export default function NewPolicyScreen() {
           renewal_date: parsed.data.renewal_date || null,
           nominee: parsed.data.nominee || null,
           notes: parsed.data.notes || null,
+          family_member_id: familyMemberId,
         })
         .select('*')
         .single();
@@ -271,6 +293,15 @@ export default function NewPolicyScreen() {
           value={renewalDate}
           onChange={setRenewalDate}
           hint="Renewals appear on Home 60 days ahead."
+        />
+        <FamilyMemberPicker
+          members={members}
+          value={familyMemberId}
+          onChange={setFamilyMemberId}
+          disabled={saving}
+          label="Covered member"
+          hint="Optional. Who this policy primarily covers in your household."
+          emptyHint="Add someone under Family to link cover to them. Profiles stay on your account — they do not get a separate login yet."
         />
         <TextField
           label="Nominee"

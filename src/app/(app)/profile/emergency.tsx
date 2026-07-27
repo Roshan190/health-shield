@@ -194,6 +194,11 @@ export default function EmergencyCardScreen() {
             </ThemedText>
           </Card>
 
+          <Button
+            label="Start SOS"
+            icon="alert"
+            onPress={() => router.push('/emergency/sos')}
+          />
           <Button label="Refresh card" icon="refresh" variant="secondary" onPress={load} />
           <Button label="Back" variant="ghost" onPress={() => router.back()} />
         </>

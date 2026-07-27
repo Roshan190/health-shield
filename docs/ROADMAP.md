@@ -134,18 +134,35 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 
 ## Phase 3 — Emergency system
 
-**Entered:** after Phase 2 exit (**D-014**). Blueprint Phase 3 is ambition; slice this thinly before coding.
+**Entered:** 2026-07-26 after Phase 2 exit (**D-014**). Cut locked in **D-015**.
 
 **Goal:** Live SOS / location-aware emergency — distinct from the static offline card in slice 1.5.
 
-### Slice plan (draft — refine before build)
+### Slice 3.1 — SOS entry + confirm
 
-- 3.1 SOS entry + confirm — prominent action; no accidental send; reuse emergency profile fields
-- 3.2 Notify contacts — SMS/share or local compose with location link (India-first, least privilege)
-- 3.3 Live location (thin) — foreground location while SOS active; clear stop/cancel
-- 3.4 Polish — offline fallback to static card; export/delete unchanged for new tables if any
+- Hub `/emergency`; SOS screen with explicit confirm Alert
+- Reuse profile emergency contact fields + offline card snapshot
+- Copy: app does not call emergency services
 
-**Deferred:** ambulance dispatch APIs, always-on background tracking, doctor portal emergency.
+### Slice 3.2 — Notify contacts
+
+- Prefill SMS to emergency contact phone (`expo-sms`) and/or system Share
+- Message includes name/blood group (if set) + Google Maps link when coords exist
+- Nothing leaves device until user taps Send in the OS composer
+
+### Slice 3.3 — Foreground location (thin)
+
+- `expo-location` when-in-use only; watch while SOS active
+- End SOS clears local session and stops watch
+- No background location permissions
+
+### Slice 3.4 — Polish
+
+- Home quick action → emergency hub; Profile links hub
+- Account delete clears SOS session
+- Offline static card remains available without SOS
+
+**Deferred:** ambulance dispatch APIs, always-on background tracking, shake/fall detection, nearby hospitals, doctor portal emergency.
 
 ### Phase 3 exit criteria
 
@@ -154,11 +171,71 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 3. No secrets / real PII in repo; copy does not promise clinical outcomes
 4. `PROGRESS.md` updated
 
+**Closed:** 2026-07-27 via **D-016** (Android founder smoke; iOS SOS/Apple Health parked).
+
+---
+
+## Phase Q2 — Deepen Foundation (post–Phase 3)
+
+**Entered:** 2026-07-27 after Phase 3 exit (**D-016**). Cut locked in **D-017**. Phase 4 AI stays deferred.
+
+**Goal:** Make insurance, records, family, and notifications more useful for a household — without AI, OCR, or shared logins yet.
+
+### Slice Q2.1 — Notification reliability
+
+- Renewal + medication reminder sync on app focus / login / foreground
+- Clear permission denied / unsupported states (`ReminderStatusCard`)
+- Android smoke: schedule → receive on **dev-client** (Expo Go Android skips)
+
+**Shipped:** 2026-07-27
+
+### Slice Q2.2 — Records findability
+
+- Filter by category; optional link to `family_members`
+- Empty / no-match states; search remains
+
+**Shipped:** 2026-07-27
+
+### Slice Q2.3 — Policy ↔ member link
+
+- Optional covered family member on policies
+- Home upcoming renewals unchanged in spirit; member name when set
+
+**Shipped:** 2026-07-27
+
+### Slice Q2.4 — Family clarity (thin)
+
+- D-008 stands: owner-managed, no invite yet
+- Member detail lists linked policies/records
+- UI copy: roles do not grant separate login access
+
+**Shipped:** 2026-07-27
+
+### Slice Q2.5 — Ops + feedback hygiene
+
+- Google Play category **Health & fitness** (Play Console — founder)
+- Supabase Auth leaked-password protection (Auth settings / Pro — founder)
+- Real user feedback logged in `docs/research/user-notes.md`
+
+**Shipped:** 2026-07-27 (repo + R1 feedback; Console steps checklist in `PROGRESS.md`)
+
+### Q2 exit criteria
+
+1. Q2.1–Q2.4 usable on Android with Supabase persistence where schema changes apply
+2. No AI / secrets / real PII in repo; no invite RLS half-built
+3. `PROGRESS.md` updated; Phase 4 still requires its own decision
+
+**Closed:** 2026-07-27 — deepen cut met (D-017). Phase 4 AI still deferred.
+
+**Deferred:** Phase 4 AI, OCR, invite + shared RLS, claims, doctor portal.
+
 ---
 
 ## Phase 4+ — AI, claims, doctor portal, premium, enterprise
 
-Do **not** start early. Blueprint Phases 4–8 stay deferred until retention validates Foundation.
+Do **not** start early. Blueprint Phases 4–8 stay deferred until a thin cut + override is recorded in `DECISIONS.md`.
+
+**Active alternative:** Phase Q2 deepen (**D-017**). Starting blueprint Phase 4 AI requires an explicit cut + override.
 
 ---
 

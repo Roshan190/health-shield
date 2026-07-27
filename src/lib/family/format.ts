@@ -12,13 +12,13 @@ export const FAMILY_RELATIONSHIPS: { value: FamilyRelationship; label: string }[
 export const FAMILY_ROLES: { value: FamilyRole; label: string; hint: string }[] = [
   {
     value: 'viewer',
-    label: 'Viewer',
-    hint: 'Can see shared items when invites land. Cannot change household data.',
+    label: 'Viewer (intent)',
+    hint: 'Saved for later. Does not grant a login or access to your policies/records today.',
   },
   {
     value: 'manager',
-    label: 'Manager',
-    hint: 'Intended co-manager for the household. Full edit once invite/share ships.',
+    label: 'Manager (intent)',
+    hint: 'Saved for later. Does not grant a login or edit rights until invite/share ships.',
   },
 ];
 

@@ -16,7 +16,12 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme, useThemeName } from '@/hooks/use-theme';
-import { formatDisplayDate, parseISODate, toISODate } from '@/lib/dates';
+import {
+  formatDisplayDate,
+  parseISODate,
+  toISODateFromPicker,
+  toPickerDate,
+} from '@/lib/dates';
 
 type DateFieldProps = {
   label?: string;
@@ -58,18 +63,21 @@ export function DateField({
   const [draft, setDraft] = useState<Date>(() => parseISODate(value) ?? new Date());
 
   const display = value ? formatDisplayDate(value) : '';
-  const pickerValue = parseISODate(value) ?? draft;
+  const localValue = parseISODate(value) ?? draft;
+  /** UTC-noon twin so Android `toISOString()` keeps the same calendar day. */
+  const pickerValue = toPickerDate(localValue);
 
   function openPicker() {
     if (disabled) {
       return;
     }
-    setDraft(parseISODate(value) ?? new Date());
+    const next = parseISODate(value) ?? new Date();
+    setDraft(toPickerDate(next));
     setOpen(true);
   }
 
   function commit(date: Date) {
-    onChange(toISODate(date));
+    onChange(toISODateFromPicker(date));
     setOpen(false);
   }
 
@@ -193,7 +201,7 @@ export function DateField({
                 minimumDate={minimumDate}
                 maximumDate={maximumDate}
                 onValueChange={(_event, selectedDate) => {
-                  setDraft(selectedDate);
+                  setDraft(toPickerDate(selectedDate));
                 }}
                 style={styles.iosPicker}
               />

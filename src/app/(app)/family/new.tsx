@@ -149,7 +149,7 @@ export default function NewFamilyMemberScreen() {
           <ThemedText type="section">Intended role</ThemedText>
         </View>
         <ThemedText type="caption" themeColor="textSecondary">
-          Saved for when invites land. Does not change who can see your data today.
+          Intent only — not a separate login, and not shared access yet.
         </ThemedText>
         <View style={styles.roleList}>
           {FAMILY_ROLES.map((item) => (

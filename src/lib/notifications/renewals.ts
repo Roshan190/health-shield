@@ -1,9 +1,13 @@
 import { Platform } from 'react-native';
 
 import {
+  ensureNotificationPermissions,
+  getNotificationCapability,
   getNotificationsModule,
   notificationsUnsupported,
+  type NotificationCapability,
   type NotificationsModule,
+  type ReminderSyncResult,
 } from '@/lib/notifications/runtime';
 import { formatDate } from '@/lib/policies/format';
 import type { Policy } from '@/lib/supabase/database.types';
@@ -45,20 +49,6 @@ async function ensureAndroidChannel(Notifications: NotificationsModule) {
   });
 }
 
-export async function requestNotificationPermissions(): Promise<boolean> {
-  const Notifications = await getNotificationsModule();
-  if (!Notifications) {
-    return false;
-  }
-  await ensureNotificationHandler();
-  const current = await Notifications.getPermissionsAsync();
-  if (current.granted) {
-    return true;
-  }
-  const asked = await Notifications.requestPermissionsAsync();
-  return asked.granted;
-}
-
 function parseLocalDate(isoDate: string) {
   const [y, m, d] = isoDate.split('-').map(Number);
   return new Date(y, m - 1, d, 9, 0, 0, 0);
@@ -68,12 +58,15 @@ function notificationId(policyId: string, offsetDays: number) {
   return `${ID_PREFIX}${policyId}:${offsetDays}`;
 }
 
+function skippedResult(capability: NotificationCapability): ReminderSyncResult {
+  return { scheduled: 0, capability };
+}
+
 /** Cancel prior renewal reminders, then schedule for policies with future renewal dates. */
-export async function syncRenewalNotifications(policies: Policy[]) {
+export async function syncRenewalNotifications(policies: Policy[]): Promise<ReminderSyncResult> {
   const Notifications = await getNotificationsModule();
   if (!Notifications) {
-    // Expo Go Android / web: skip quietly — use a development build for reminders.
-    return { scheduled: 0, skipped: true as const };
+    return skippedResult(await getNotificationCapability());
   }
 
   await ensureNotificationHandler();
@@ -86,9 +79,9 @@ export async function syncRenewalNotifications(policies: Policy[]) {
       .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier))
   );
 
-  const granted = await requestNotificationPermissions();
-  if (!granted) {
-    return { scheduled: 0, skipped: true as const };
+  const capability = await ensureNotificationPermissions();
+  if (capability.status !== 'granted') {
+    return skippedResult(capability);
   }
 
   const now = Date.now();
@@ -132,5 +125,5 @@ export async function syncRenewalNotifications(policies: Policy[]) {
     }
   }
 
-  return { scheduled, skipped: false as const };
+  return { scheduled, capability };
 }

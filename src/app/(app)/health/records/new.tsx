@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { SelectChip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
+import { FamilyMemberPicker } from '@/components/family-member-picker';
 import { IconBadge } from '@/components/icon-badge';
 import { Screen } from '@/components/screen';
 import { TextField } from '@/components/text-field';
@@ -22,7 +23,7 @@ import {
   type PickedRecordDoc,
 } from '@/lib/records/upload';
 import { getSupabase } from '@/lib/supabase/client';
-import type { RecordCategory } from '@/lib/supabase/database.types';
+import type { FamilyMember, RecordCategory } from '@/lib/supabase/database.types';
 
 const schema = z.object({
   title: z.string().trim().min(1, 'Title is required'),
@@ -54,9 +55,29 @@ export default function NewRecordScreen() {
   const [recordDate, setRecordDate] = useState('');
   const [tags, setTags] = useState('');
   const [notes, setNotes] = useState('');
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [doc, setDoc] = useState<PickedRecordDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        const { data } = await getSupabase()
+          .from('family_members')
+          .select('*')
+          .order('full_name', { ascending: true });
+        if (active) {
+          setMembers(data ?? []);
+        }
+      })();
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   async function onPickDocument() {
     setError(null);
@@ -101,6 +122,7 @@ export default function NewRecordScreen() {
           record_date: parsed.data.record_date || null,
           tags: parseTags(parsed.data.tags),
           notes: parsed.data.notes || null,
+          family_member_id: familyMemberId,
         })
         .select('*')
         .single();
@@ -143,7 +165,6 @@ export default function NewRecordScreen() {
       title="Add record"
       subtitle="A document plus a few details, so you can find it later."
       headerRight={<IconBadge icon="folder-open" tint="violet" size={44} />}>
-      {/* ——— Record details ——— */}
       <Card style={styles.formCard}>
         <View style={styles.cardTitleRow}>
           <IconBadge icon="document-text" tint="blue" size={34} />
@@ -177,9 +198,14 @@ export default function NewRecordScreen() {
           maximumDate={new Date()}
           hint="The date on the document, used for the timeline."
         />
+        <FamilyMemberPicker
+          members={members}
+          value={familyMemberId}
+          onChange={setFamilyMemberId}
+          disabled={saving}
+        />
       </Card>
 
-      {/* ——— Organize ——— */}
       <Card style={styles.formCard}>
         <View style={styles.cardTitleRow}>
           <IconBadge icon="pricetags" tint="teal" size={34} />
@@ -205,7 +231,6 @@ export default function NewRecordScreen() {
         />
       </Card>
 
-      {/* ——— Document ——— */}
       <Card style={styles.formCard}>
         <View style={styles.cardTitleRow}>
           <IconBadge icon="document-attach" tint="amber" size={34} />

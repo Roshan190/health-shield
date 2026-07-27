@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip, SelectChip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
+import { FamilyMemberPicker } from '@/components/family-member-picker';
 import { IconBadge } from '@/components/icon-badge';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
@@ -32,7 +33,7 @@ import {
   type PickedRecordDoc,
 } from '@/lib/records/upload';
 import { getSupabase } from '@/lib/supabase/client';
-import type { MedicalRecord, RecordCategory } from '@/lib/supabase/database.types';
+import type { FamilyMember, MedicalRecord, RecordCategory } from '@/lib/supabase/database.types';
 
 const schema = z.object({
   title: z.string().trim().min(1, 'Title is required'),
@@ -66,6 +67,8 @@ export default function RecordDetailScreen() {
   const [recordDate, setRecordDate] = useState('');
   const [tags, setTags] = useState('');
   const [notes, setNotes] = useState('');
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [pendingDoc, setPendingDoc] = useState<PickedRecordDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -79,24 +82,26 @@ export default function RecordDetailScreen() {
     setRecordDate(row.record_date ?? '');
     setTags(formatTags(row.tags));
     setNotes(row.notes ?? '');
+    setFamilyMemberId(row.family_member_id);
   }, []);
 
   const load = useCallback(async () => {
     if (!id) {
       return;
     }
-    const { data, error: loadError } = await getSupabase()
-      .from('medical_records')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
+    const [recordRes, membersRes] = await Promise.all([
+      getSupabase().from('medical_records').select('*').eq('id', id).maybeSingle(),
+      getSupabase().from('family_members').select('*').order('full_name', { ascending: true }),
+    ]);
 
-    if (loadError) {
-      setError(loadError.message);
-    } else if (!data) {
+    setMembers(membersRes.data ?? []);
+
+    if (recordRes.error) {
+      setError(recordRes.error.message);
+    } else if (!recordRes.data) {
       setError('Record not found');
     } else {
-      hydrate(data);
+      hydrate(recordRes.data);
       setError(null);
     }
     setLoading(false);
@@ -179,6 +184,7 @@ export default function RecordDetailScreen() {
           record_date: parsed.data.record_date || null,
           tags: parseTags(parsed.data.tags),
           notes: parsed.data.notes || null,
+          family_member_id: familyMemberId,
           document_path: documentPath,
           document_name: documentName,
           document_mime: documentMime,
@@ -301,6 +307,12 @@ export default function RecordDetailScreen() {
           value={recordDate}
           onChange={setRecordDate}
           maximumDate={new Date()}
+        />
+        <FamilyMemberPicker
+          members={members}
+          value={familyMemberId}
+          onChange={setFamilyMemberId}
+          disabled={saving}
         />
       </Card>
 

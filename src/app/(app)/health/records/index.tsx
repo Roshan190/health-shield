@@ -24,32 +24,48 @@ import {
 } from '@/lib/records/format';
 import { formatDate } from '@/lib/policies/format';
 import { getSupabase } from '@/lib/supabase/client';
-import type { MedicalRecord, RecordCategory } from '@/lib/supabase/database.types';
+import type { FamilyMember, MedicalRecord, RecordCategory } from '@/lib/supabase/database.types';
+
+type MemberFilter = 'all' | 'unassigned' | string;
 
 export default function RecordsListScreen() {
   const router = useRouter();
   const theme = useTheme();
   const [records, setRecords] = useState<MedicalRecord[]>([]);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<RecordCategory | 'all'>('all');
+  const [memberFilter, setMemberFilter] = useState<MemberFilter>('all');
+
+  const memberById = useMemo(() => {
+    const map = new Map<string, FamilyMember>();
+    for (const member of members) {
+      map.set(member.id, member);
+    }
+    return map;
+  }, [members]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: loadError } = await getSupabase()
-      .from('medical_records')
-      .select('*')
-      .order('record_date', { ascending: false, nullsFirst: false })
-      .order('created_at', { ascending: false });
+    const [recordsRes, membersRes] = await Promise.all([
+      getSupabase()
+        .from('medical_records')
+        .select('*')
+        .order('record_date', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false }),
+      getSupabase().from('family_members').select('*').order('full_name', { ascending: true }),
+    ]);
 
-    if (loadError) {
-      setError(loadError.message);
+    if (recordsRes.error) {
+      setError(recordsRes.error.message);
       setRecords([]);
     } else {
-      setRecords(data ?? []);
+      setRecords(recordsRes.data ?? []);
     }
+    setMembers(membersRes.data ?? []);
     setLoading(false);
   }, []);
 
@@ -61,12 +77,26 @@ export default function RecordsListScreen() {
 
   const filtered = useMemo(
     () =>
-      records.filter(
-        (record) =>
-          (categoryFilter === 'all' || record.category === categoryFilter) &&
-          matchesRecordQuery(record, query)
-      ),
-    [records, categoryFilter, query]
+      records.filter((record) => {
+        if (categoryFilter !== 'all' && record.category !== categoryFilter) {
+          return false;
+        }
+        if (memberFilter === 'unassigned' && record.family_member_id) {
+          return false;
+        }
+        if (
+          memberFilter !== 'all' &&
+          memberFilter !== 'unassigned' &&
+          record.family_member_id !== memberFilter
+        ) {
+          return false;
+        }
+        const memberName = record.family_member_id
+          ? (memberById.get(record.family_member_id)?.full_name ?? null)
+          : null;
+        return matchesRecordQuery(record, query, memberName);
+      }),
+    [records, categoryFilter, memberFilter, query, memberById]
   );
 
   const timeline = useMemo(() => {
@@ -82,6 +112,15 @@ export default function RecordsListScreen() {
     }
     return groups;
   }, [filtered]);
+
+  const hasActiveFilters =
+    categoryFilter !== 'all' || memberFilter !== 'all' || query.trim().length > 0;
+
+  function clearFilters() {
+    setCategoryFilter('all');
+    setMemberFilter('all');
+    setQuery('');
+  }
 
   return (
     <Screen
@@ -119,7 +158,7 @@ export default function RecordsListScreen() {
         <>
           <TextField
             icon="search"
-            placeholder="Search title, tags, or notes"
+            placeholder="Search title, tags, notes, or member"
             value={query}
             onChangeText={setQuery}
             autoCapitalize="none"
@@ -131,7 +170,7 @@ export default function RecordsListScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterRow}>
             <SelectChip
-              label="All"
+              label="All categories"
               selected={categoryFilter === 'all'}
               onPress={() => setCategoryFilter('all')}
             />
@@ -145,13 +184,46 @@ export default function RecordsListScreen() {
             ))}
           </ScrollView>
 
+          {members.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterRow}>
+              <SelectChip
+                label="Everyone"
+                selected={memberFilter === 'all'}
+                onPress={() => setMemberFilter('all')}
+              />
+              <SelectChip
+                label="Unassigned"
+                selected={memberFilter === 'unassigned'}
+                onPress={() => setMemberFilter('unassigned')}
+              />
+              {members.map((member) => (
+                <SelectChip
+                  key={member.id}
+                  label={member.full_name}
+                  selected={memberFilter === member.id}
+                  onPress={() => setMemberFilter(member.id)}
+                />
+              ))}
+            </ScrollView>
+          ) : null}
+
           {filtered.length === 0 ? (
             <EmptyState
               icon="search"
               tint="slate"
               title="No matches"
-              message="Try a different search term or category filter."
-            />
+              message={
+                hasActiveFilters
+                  ? 'Try clearing search or filters, or add a record for this person.'
+                  : 'Nothing to show yet.'
+              }>
+              {hasActiveFilters ? (
+                <Button label="Clear filters" icon="close-circle" variant="secondary" onPress={clearFilters} />
+              ) : null}
+            </EmptyState>
           ) : (
             timeline.map((group) => (
               <View key={group.label} style={styles.group}>
@@ -161,6 +233,9 @@ export default function RecordsListScreen() {
                 <View style={styles.list}>
                   {group.items.map((record, index) => {
                     const visual = recordVisual(record.category);
+                    const memberName = record.family_member_id
+                      ? memberById.get(record.family_member_id)?.full_name
+                      : null;
                     return (
                       <Animated.View
                         key={record.id}
@@ -177,6 +252,9 @@ export default function RecordsListScreen() {
                               {recordCategoryLabel(record.category)}
                               {record.record_date ? ` · ${formatDate(record.record_date)}` : ''}
                             </ThemedText>
+                            {memberName ? (
+                              <Chip label={memberName} tint="teal" icon="person" />
+                            ) : null}
                             {record.tags.length > 0 ? (
                               <ThemedText
                                 type="caption"

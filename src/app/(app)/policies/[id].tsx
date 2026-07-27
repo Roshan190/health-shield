@@ -9,6 +9,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip, SelectChip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
+import { FamilyMemberPicker } from '@/components/family-member-picker';
 import { IconBadge } from '@/components/icon-badge';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
@@ -34,7 +35,7 @@ import {
   type PickedPdf,
 } from '@/lib/policies/upload';
 import { getSupabase } from '@/lib/supabase/client';
-import type { Policy, PolicyType } from '@/lib/supabase/database.types';
+import type { FamilyMember, Policy, PolicyType } from '@/lib/supabase/database.types';
 
 const optionalDate = z
   .string()
@@ -88,6 +89,8 @@ export default function PolicyDetailScreen() {
   const [renewalDate, setRenewalDate] = useState('');
   const [nominee, setNominee] = useState('');
   const [notes, setNotes] = useState('');
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [pendingPdf, setPendingPdf] = useState<PickedPdf | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -106,24 +109,26 @@ export default function PolicyDetailScreen() {
     setRenewalDate(row.renewal_date ?? '');
     setNominee(row.nominee ?? '');
     setNotes(row.notes ?? '');
+    setFamilyMemberId(row.family_member_id);
   }, []);
 
   const load = useCallback(async () => {
     if (!id) {
       return;
     }
-    const { data, error: loadError } = await getSupabase()
-      .from('policies')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
+    const [policyRes, membersRes] = await Promise.all([
+      getSupabase().from('policies').select('*').eq('id', id).maybeSingle(),
+      getSupabase().from('family_members').select('*').order('full_name', { ascending: true }),
+    ]);
 
-    if (loadError) {
-      setError(loadError.message);
-    } else if (!data) {
+    setMembers(membersRes.data ?? []);
+
+    if (policyRes.error) {
+      setError(policyRes.error.message);
+    } else if (!policyRes.data) {
       setError('Policy not found');
     } else {
-      hydrate(data);
+      hydrate(policyRes.data);
       setError(null);
     }
     setLoading(false);
@@ -225,6 +230,7 @@ export default function PolicyDetailScreen() {
           renewal_date: parsed.data.renewal_date || null,
           nominee: parsed.data.nominee || null,
           notes: parsed.data.notes || null,
+          family_member_id: familyMemberId,
           document_path: documentPath,
           document_name: documentName,
           updated_at: new Date().toISOString(),
@@ -448,6 +454,15 @@ export default function PolicyDetailScreen() {
           value={renewalDate}
           onChange={setRenewalDate}
           hint="Renewals appear on Home 60 days ahead."
+        />
+        <FamilyMemberPicker
+          members={members}
+          value={familyMemberId}
+          onChange={setFamilyMemberId}
+          disabled={saving}
+          label="Covered member"
+          hint="Optional. Who this policy primarily covers in your household."
+          emptyHint="Add someone under Family to link cover to them. Profiles stay on your account — they do not get a separate login yet."
         />
         <TextField label="Nominee" icon="person" value={nominee} onChangeText={setNominee} />
         <TextField

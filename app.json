@@ -76,6 +76,14 @@
           "healthUpdatePermission": "HealthShield does not write to Apple Health. This permission string is required by iOS.",
           "backgroundDelivery": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "HealthShield uses your location only while an SOS is active so you can share it with people you choose. We do not track you in the background.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isIosBackgroundLocationEnabled": false
+        }
       ]
     ],
     "experiments": {

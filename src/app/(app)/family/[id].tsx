@@ -5,7 +5,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { Button } from '@/components/button';
-import { Card } from '@/components/card';
+import { Card, PressableCard } from '@/components/card';
 import { Chip, SelectChip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
 import { IconBadge } from '@/components/icon-badge';
@@ -23,12 +23,21 @@ import {
   roleLabel,
 } from '@/lib/family/format';
 import { memberVisual, roleTint } from '@/lib/family/visuals';
-import { formatDate } from '@/lib/policies/format';
+import {
+  formatDate,
+  formatInrCompact,
+  policyTypeLabel,
+  renewalLabel,
+} from '@/lib/policies/format';
+import { policyVisual } from '@/lib/policies/visuals';
+import { recordCategoryLabel, recordVisual } from '@/lib/records/format';
 import { getSupabase } from '@/lib/supabase/client';
 import type {
   FamilyMember,
   FamilyRelationship,
   FamilyRole,
+  MedicalRecord,
+  Policy,
 } from '@/lib/supabase/database.types';
 
 const schema = z.object({
@@ -51,6 +60,8 @@ export default function FamilyMemberDetailScreen() {
   const user = useSessionStore((s) => s.user);
 
   const [member, setMember] = useState<FamilyMember | null>(null);
+  const [linkedPolicies, setLinkedPolicies] = useState<Policy[]>([]);
+  const [linkedRecords, setLinkedRecords] = useState<MedicalRecord[]>([]);
   const [fullName, setFullName] = useState('');
   const [relationship, setRelationship] = useState<FamilyRelationship>('other');
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -76,18 +87,29 @@ export default function FamilyMemberDetailScreen() {
     if (!id) {
       return;
     }
-    const { data, error: loadError } = await getSupabase()
-      .from('family_members')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
+    const [memberRes, policiesRes, recordsRes] = await Promise.all([
+      getSupabase().from('family_members').select('*').eq('id', id).maybeSingle(),
+      getSupabase()
+        .from('policies')
+        .select('*')
+        .eq('family_member_id', id)
+        .order('renewal_date', { ascending: true, nullsFirst: false }),
+      getSupabase()
+        .from('medical_records')
+        .select('*')
+        .eq('family_member_id', id)
+        .order('record_date', { ascending: false, nullsFirst: false }),
+    ]);
 
-    if (loadError) {
-      setError(loadError.message);
-    } else if (!data) {
+    setLinkedPolicies(policiesRes.data ?? []);
+    setLinkedRecords(recordsRes.data ?? []);
+
+    if (memberRes.error) {
+      setError(memberRes.error.message);
+    } else if (!memberRes.data) {
       setError('Member not found');
     } else {
-      hydrate(data);
+      hydrate(memberRes.data);
       setError(null);
     }
     setLoading(false);
@@ -151,24 +173,28 @@ export default function FamilyMemberDetailScreen() {
     if (!id) {
       return;
     }
-    Alert.alert('Remove member?', 'This only removes their household profile from your account.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          const { error: deleteError } = await getSupabase()
-            .from('family_members')
-            .delete()
-            .eq('id', id);
-          if (deleteError) {
-            setError(deleteError.message);
-            return;
-          }
-          router.replace('/family');
+    Alert.alert(
+      'Remove member?',
+      'Removes this household profile. Linked policies and records stay in your vault but become unassigned.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            const { error: deleteError } = await getSupabase()
+              .from('family_members')
+              .delete()
+              .eq('id', id);
+            if (deleteError) {
+              setError(deleteError.message);
+              return;
+            }
+            router.replace('/family');
+          },
         },
-      },
-    ]);
+      ]
+    );
   }
 
   if (loading) {
@@ -198,6 +224,7 @@ export default function FamilyMemberDetailScreen() {
   }
 
   const visual = memberVisual(member.relationship);
+  const hasLinks = linkedPolicies.length > 0 || linkedRecords.length > 0;
 
   return (
     <Screen
@@ -213,9 +240,99 @@ export default function FamilyMemberDetailScreen() {
           icon={member.role === 'manager' ? 'key' : 'eye'}
         />
         <ThemedText type="caption" themeColor="textSecondary">
-          Policies and records remain private to your login. This role is for future household
-          sharing.
+          This is a profile on your account — not a separate login. Roles do not grant access.
+          Policies and records stay private to you (D-008).
         </ThemedText>
+      </Card>
+
+      <Card style={styles.formCard}>
+        <View style={styles.cardTitleRow}>
+          <IconBadge icon="link" tint="teal" size={34} />
+          <ThemedText type="section">Linked on your vault</ThemedText>
+        </View>
+        <ThemedText type="caption" themeColor="textSecondary">
+          Items you tagged for {member.full_name}. They still belong only to your login.
+        </ThemedText>
+
+        {!hasLinks ? (
+          <ThemedText type="small" themeColor="textTertiary">
+            Nothing linked yet. Assign a covered member on a policy or a family member on a
+            record.
+          </ThemedText>
+        ) : null}
+
+        {linkedPolicies.length > 0 ? (
+          <View style={styles.linkBlock}>
+            <ThemedText type="smallBold">Policies ({linkedPolicies.length})</ThemedText>
+            {linkedPolicies.map((policy) => {
+              const pVisual = policyVisual(policy.policy_type);
+              return (
+                <PressableCard
+                  key={policy.id}
+                  style={styles.linkCard}
+                  onPress={() => router.push(`/policies/${policy.id}`)}>
+                  <IconBadge icon={pVisual.icon} tint={pVisual.tint} size={40} />
+                  <View style={styles.linkBody}>
+                    <ThemedText type="smallBold" numberOfLines={1}>
+                      {policy.insurer}
+                    </ThemedText>
+                    <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
+                      {policyTypeLabel(policy.policy_type)} ·{' '}
+                      {formatInrCompact(policy.sum_insured)} · {renewalLabel(policy.renewal_date)}
+                    </ThemedText>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} />
+                </PressableCard>
+              );
+            })}
+          </View>
+        ) : null}
+
+        {linkedRecords.length > 0 ? (
+          <View style={styles.linkBlock}>
+            <ThemedText type="smallBold">Records ({linkedRecords.length})</ThemedText>
+            {linkedRecords.map((record) => {
+              const rVisual = recordVisual(record.category);
+              return (
+                <PressableCard
+                  key={record.id}
+                  style={styles.linkCard}
+                  onPress={() => router.push(`/health/records/${record.id}`)}>
+                  <IconBadge icon={rVisual.icon} tint={rVisual.tint} size={40} />
+                  <View style={styles.linkBody}>
+                    <ThemedText type="smallBold" numberOfLines={1}>
+                      {record.title}
+                    </ThemedText>
+                    <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1}>
+                      {recordCategoryLabel(record.category)}
+                      {record.record_date ? ` · ${formatDate(record.record_date)}` : ''}
+                    </ThemedText>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} />
+                </PressableCard>
+              );
+            })}
+          </View>
+        ) : null}
+
+        <View style={styles.linkActions}>
+          <Button
+            label="Add policy"
+            icon="shield-checkmark"
+            size="sm"
+            variant="secondary"
+            onPress={() => router.push('/policies/new')}
+            disabled={saving}
+          />
+          <Button
+            label="Add record"
+            icon="folder-open"
+            size="sm"
+            variant="secondary"
+            onPress={() => router.push('/health/records/new')}
+            disabled={saving}
+          />
+        </View>
       </Card>
 
       <Card style={styles.formCard}>
@@ -258,6 +375,9 @@ export default function FamilyMemberDetailScreen() {
           <IconBadge icon="key" tint="amber" size={34} />
           <ThemedText type="section">Intended role</ThemedText>
         </View>
+        <ThemedText type="caption" themeColor="textSecondary">
+          Intent only — not a separate login, and not shared access yet.
+        </ThemedText>
         <View style={styles.chips}>
           {FAMILY_ROLES.map((item) => (
             <SelectChip
@@ -319,6 +439,23 @@ const styles = StyleSheet.create({
     gap: Spacing.two + Spacing.half,
   },
   chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  linkBlock: {
+    gap: Spacing.two,
+  },
+  linkCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two + Spacing.half,
+  },
+  linkBody: {
+    flex: 1,
+    gap: Spacing.half,
+  },
+  linkActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,

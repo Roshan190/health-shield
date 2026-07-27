@@ -54,10 +54,14 @@ export function formatTags(tags: string[]): string {
 }
 
 /**
- * Basic client-side search across title, tags, and notes.
+ * Basic client-side search across title, tags, notes, category, and optional member name.
  * Fine for Foundation volumes; move server-side if libraries grow large.
  */
-export function matchesRecordQuery(record: MedicalRecord, query: string) {
+export function matchesRecordQuery(
+  record: MedicalRecord,
+  query: string,
+  memberName?: string | null
+) {
   const q = query.trim().toLowerCase();
   if (!q) {
     return true;
@@ -66,7 +70,8 @@ export function matchesRecordQuery(record: MedicalRecord, query: string) {
     record.title.toLowerCase().includes(q) ||
     record.tags.some((tag) => tag.includes(q)) ||
     (record.notes ?? '').toLowerCase().includes(q) ||
-    recordCategoryLabel(record.category).toLowerCase().includes(q)
+    recordCategoryLabel(record.category).toLowerCase().includes(q) ||
+    (memberName ?? '').toLowerCase().includes(q)
   );
 }
 

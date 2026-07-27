@@ -25,8 +25,7 @@ import {
 import { useGradients, useTheme } from '@/hooks/use-theme';
 import { useSessionStore } from '@/lib/auth/session-store';
 import { findNextDose, nextDoseLabel } from '@/lib/medications/next-dose';
-import { syncMedicationNotifications } from '@/lib/notifications/medications';
-import { syncRenewalNotifications } from '@/lib/notifications/renewals';
+import { resyncAllLocalReminders } from '@/lib/notifications/resync';
 import {
   formatInrCompact,
   isRenewalSoon,
@@ -36,7 +35,7 @@ import {
 } from '@/lib/policies/format';
 import { policyVisual, RENEWAL_TONE_TINT } from '@/lib/policies/visuals';
 import { getSupabase } from '@/lib/supabase/client';
-import type { Medication, Policy, Vital } from '@/lib/supabase/database.types';
+import type { FamilyMember, Medication, Policy, Vital } from '@/lib/supabase/database.types';
 import { formatVitalValue, formatVitalWhen, vitalTypeLabel } from '@/lib/vitals/format';
 import { vitalVisual } from '@/lib/vitals/visuals';
 
@@ -63,8 +62,8 @@ type QuickAction = {
 /** Thin Home CTAs only — full feature map lives in tabs / Health hub (D-012). */
 const QUICK_ACTIONS: QuickAction[] = [
   { key: 'health', label: 'Health', icon: 'fitness', tint: 'teal', route: '/health' },
-  { key: 'add-policy', label: 'Add policy', icon: 'add-circle', tint: 'blue', route: '/policies/new' },
-  { key: 'emergency', label: 'Emergency', icon: 'medkit', tint: 'red', route: '/profile/emergency' },
+  { key: 'add-policy', label: 'Policy', icon: 'add-circle', tint: 'blue', route: '/policies/new' },
+  { key: 'emergency', label: 'Emergency', icon: 'medkit', tint: 'red', route: '/emergency' },
 ];
 
 export default function HomeScreen() {
@@ -75,17 +74,26 @@ export default function HomeScreen() {
   const user = useSessionStore((s) => s.user);
 
   const [policies, setPolicies] = useState<Policy[]>([]);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [recentVitals, setRecentVitals] = useState<Vital[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [firstName, setFirstName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const memberById = useMemo(() => {
+    const map = new Map<string, FamilyMember>();
+    for (const member of members) {
+      map.set(member.id, member);
+    }
+    return map;
+  }, [members]);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       (async () => {
         const supabase = getSupabase();
-        const [policiesRes, profileRes, vitalsRes, medsRes] = await Promise.all([
+        const [policiesRes, profileRes, vitalsRes, medsRes, membersRes] = await Promise.all([
           supabase
             .from('policies')
             .select('*')
@@ -99,6 +107,7 @@ export default function HomeScreen() {
             .order('recorded_at', { ascending: false })
             .limit(3),
           supabase.from('medications').select('*').order('updated_at', { ascending: false }),
+          supabase.from('family_members').select('*').order('full_name', { ascending: true }),
         ]);
         if (!active) {
           return;
@@ -106,13 +115,13 @@ export default function HomeScreen() {
         const nextPolicies = policiesRes.data ?? [];
         const nextMeds = medsRes.data ?? [];
         setPolicies(nextPolicies);
+        setMembers(membersRes.data ?? []);
         setRecentVitals(vitalsRes.data ?? []);
         setMedications(nextMeds);
         const fullName = profileRes.data?.full_name ?? null;
         setFirstName(fullName ? fullName.trim().split(/\s+/)[0] : null);
         setLoading(false);
-        void syncRenewalNotifications(nextPolicies);
-        void syncMedicationNotifications(nextMeds);
+        void resyncAllLocalReminders();
       })();
       return () => {
         active = false;
@@ -352,6 +361,9 @@ export default function HomeScreen() {
               {upcoming.map((policy, index) => {
                 const visual = policyVisual(policy.policy_type);
                 const tone = renewalTone(policy.renewal_date);
+                const memberName = policy.family_member_id
+                  ? memberById.get(policy.family_member_id)?.full_name
+                  : null;
                 return (
                   <Animated.View
                     key={policy.id}
@@ -365,7 +377,8 @@ export default function HomeScreen() {
                           {policy.insurer}
                         </ThemedText>
                         <ThemedText type="caption" themeColor="textSecondary">
-                          {policyTypeLabel(policy.policy_type)} ·{' '}
+                          {policyTypeLabel(policy.policy_type)}
+                          {memberName ? ` · ${memberName}` : ''} ·{' '}
                           {formatInrCompact(policy.sum_insured)} cover
                         </ThemedText>
                         <Chip

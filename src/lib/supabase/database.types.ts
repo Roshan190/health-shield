@@ -82,6 +82,7 @@ export type Database = {
           notes: string | null;
           document_path: string | null;
           document_name: string | null;
+          family_member_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -100,6 +101,7 @@ export type Database = {
           notes?: string | null;
           document_path?: string | null;
           document_name?: string | null;
+          family_member_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -118,10 +120,19 @@ export type Database = {
           notes?: string | null;
           document_path?: string | null;
           document_name?: string | null;
+          family_member_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'policies_family_member_id_fkey';
+            columns: ['family_member_id'];
+            isOneToOne: false;
+            referencedRelation: 'family_members';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       medical_records: {
         Row: {
@@ -135,6 +146,7 @@ export type Database = {
           document_path: string | null;
           document_name: string | null;
           document_mime: string | null;
+          family_member_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -149,6 +161,7 @@ export type Database = {
           document_path?: string | null;
           document_name?: string | null;
           document_mime?: string | null;
+          family_member_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -163,10 +176,19 @@ export type Database = {
           document_path?: string | null;
           document_name?: string | null;
           document_mime?: string | null;
+          family_member_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'medical_records_family_member_id_fkey';
+            columns: ['family_member_id'];
+            isOneToOne: false;
+            referencedRelation: 'family_members';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       family_members: {
         Row: {

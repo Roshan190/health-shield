@@ -21,6 +21,8 @@ export default function AppTabs() {
       <Tabs.Screen name="health" options={{ title: 'Health' }} />
       <Tabs.Screen name="family" options={{ title: 'Family' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      {/* Reachable from Home/Profile — not a bottom tab (D-012). */}
+      <Tabs.Screen name="emergency" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -20,26 +20,47 @@ import { formatDate } from '@/lib/policies/format';
 import { getSupabase } from '@/lib/supabase/client';
 import type { FamilyMember } from '@/lib/supabase/database.types';
 
+type LinkCounts = Record<string, { policies: number; records: number }>;
+
 export default function FamilyListScreen() {
   const router = useRouter();
   const theme = useTheme();
   const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [linkCounts, setLinkCounts] = useState<LinkCounts>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: loadError } = await getSupabase()
-      .from('family_members')
-      .select('*')
-      .order('full_name', { ascending: true });
+    const [membersRes, policiesRes, recordsRes] = await Promise.all([
+      getSupabase().from('family_members').select('*').order('full_name', { ascending: true }),
+      getSupabase().from('policies').select('family_member_id'),
+      getSupabase().from('medical_records').select('family_member_id'),
+    ]);
 
-    if (loadError) {
-      setError(loadError.message);
+    if (membersRes.error) {
+      setError(membersRes.error.message);
       setMembers([]);
+      setLinkCounts({});
     } else {
-      setMembers(data ?? []);
+      setMembers(membersRes.data ?? []);
+      const counts: LinkCounts = {};
+      for (const row of policiesRes.data ?? []) {
+        if (!row.family_member_id) {
+          continue;
+        }
+        counts[row.family_member_id] ??= { policies: 0, records: 0 };
+        counts[row.family_member_id].policies += 1;
+      }
+      for (const row of recordsRes.data ?? []) {
+        if (!row.family_member_id) {
+          continue;
+        }
+        counts[row.family_member_id] ??= { policies: 0, records: 0 };
+        counts[row.family_member_id].records += 1;
+      }
+      setLinkCounts(counts);
     }
     setLoading(false);
   }, []);
@@ -48,6 +69,16 @@ export default function FamilyListScreen() {
     useCallback(() => {
       load();
     }, [load])
+  );
+
+  const memberCards = useMemo(
+    () =>
+      members.map((member) => {
+        const counts = linkCounts[member.id];
+        const total = (counts?.policies ?? 0) + (counts?.records ?? 0);
+        return { member, total, counts };
+      }),
+    [members, linkCounts]
   );
 
   return (
@@ -78,22 +109,27 @@ export default function FamilyListScreen() {
           accessories={['heart', 'shield-checkmark']}
           title="Add your household"
           message="Spouse, children, parents — keep their basics here. Policies and records stay private to you until sharing ships.">
-          <Button label="Add family member" icon="person-add" onPress={() => router.push('/family/new')} />
+          <Button
+            label="Add family member"
+            icon="person-add"
+            onPress={() => router.push('/family/new')}
+          />
         </EmptyState>
       ) : (
         <View style={styles.list}>
           <Card variant="tinted" style={styles.defaultsCard}>
             <IconBadge icon="lock-closed" tint="slate" size={40} />
             <View style={styles.defaultsBody}>
-              <ThemedText type="smallBold">Shared vs private</ThemedText>
+              <ThemedText type="smallBold">Profiles on your account</ThemedText>
               <ThemedText type="caption" themeColor="textSecondary">
-                Policies and medical records stay private to your account by default. Roles
-                (viewer / manager) are saved for when invites arrive — they do not grant access yet.
+                Family members are not separate logins. Policies and records stay private to you.
+                Tag people on policies/records to organize your vault; roles (viewer / manager) are
+                intent only until invite/share ships.
               </ThemedText>
             </View>
           </Card>
 
-          {members.map((member, index) => {
+          {memberCards.map(({ member, total, counts }, index) => {
             const visual = memberVisual(member.relationship);
             return (
               <Animated.View key={member.id} entering={FadeInDown.delay(index * 40).springify()}>
@@ -116,6 +152,13 @@ export default function FamilyListScreen() {
                         tint={roleTint(member.role)}
                         icon={member.role === 'manager' ? 'key' : 'eye'}
                       />
+                      {total > 0 ? (
+                        <Chip
+                          label={`${counts?.policies ?? 0} pol · ${counts?.records ?? 0} rec`}
+                          tint="teal"
+                          icon="link"
+                        />
+                      ) : null}
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />

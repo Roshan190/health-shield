@@ -6,6 +6,90 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 ---
 
+## D-018 — Household invite / shared vault (pending — not approved to build)
+
+**Status:** Pending (2026-07-27) — founder question after Q2 exit
+
+**Context:** Founder asked: if Mom downloads the app and logs in with her own account, should she see medical records/policies the manager added and tagged for her? Real users liked the app (R1); this is the natural next household ask.
+
+**Current behavior (unchanged — D-008 / D-017):**
+- `family_members` are **profiles on the owner's account**, not separate logins.
+- `family_member_id` on `medical_records` and `policies` is **organize-only** for the signed-in owner.
+- If Mom signs up separately, she gets an **empty account**; she does **not** see the manager's vault.
+
+**Decision:** **None yet.** Do not half-build sharing (shared password, phone-only link, or RLS without invites/consent).
+
+**Recommended next slice if founder chooses sharing over Phase 4 AI:**
+- Thin **invite + viewer** cut: manager invites by email → accept → view-only access to explicitly shared policies/records (not full account merge).
+- Requires new decision with schema + RLS + consent/revoke UX before coding.
+
+**Alternatives:** (A) Build invite/share (above), (B) Stay manager-only — you show Mom the phone / emergency card, (C) Phase 4 thin AI instead (needs separate override).
+
+**Why record now:** Prevents agents from silently implementing "Mom sees her records" without invite RLS.
+
+**Consequences:** Next chat should start by having founder pick A / B / C; if A, draft D-018 acceptance with explicit thin cut.
+
+---
+
+## D-017 — Q2 deepen Foundation before Phase 4 AI
+
+**Status:** Accepted (2026-07-27) — founder choice; **Q2 exit complete same day**
+
+**Context:** Phase 3 exited (D-016). Founder shared app with real users who liked the idea. Chose deepen existing Foundation (roadmap Q2) before blueprint Phase 4 AI.
+
+**Decision — track completed (no AI yet):**
+- **Q2.1** Notification reliability — renewal + medication reminders: permission UX, resync on app focus, Android smoke checklist
+- **Q2.2** Records findability — category filter + optional `family_member_id` on medical records; clearer search empty states
+- **Q2.3** Policy ↔ member link — optional covered-member on policies; Home renewals stay clear
+- **Q2.4** Family clarity (thin) — keep D-008 owner-managed profiles; copy that roles are not yet shared logins; member detail shows linked policies/records
+- **Q2.5** Ops + feedback hygiene — Play **Health & fitness** category; Supabase leaked-password protection; log real user notes under `docs/research/user-notes.md`
+
+**Explicitly deferred:** Phase 4 AI / LLM, OCR policy import, invite + shared RLS (separate decision when needed), claims, doctor portal, shake/background SOS expansions.
+
+**Why (founder):** Make the organizer trustworthy and household-useful first; AI later.
+
+**Consequences:** Q2 shipped in code (see `PROGRESS.md` done log). Phase 4 requires new decision. Invite/auth sharing deferred to **D-018** (pending founder choice).
+
+---
+
+## D-016 — Phase 3 exit: Android SOS smoke; iOS parked
+
+**Status:** Accepted (2026-07-27) — founder confirmation
+
+**Context:** Phase 3 thin SOS (D-015) shipped in code. Founder confirmed Android smoke (permission → confirm → SMS/Share → End SOS) works. No iOS device for SOS / Apple Health runtime verification.
+
+**Decision:**
+- Mark Phase 3 exit met on Android verification.
+- Keep **iOS runtime smoke parked** (Apple Health D-014 + SOS on iPhone) until device/dev-client access exists. Do not block further product work on iOS verification.
+- Phase 4+ (AI / claims / doctor portal) remains **blocked** per `ROADMAP.md` until retention validates Foundation, unless a separate explicit override is recorded.
+
+**Why (founder):** Android validates the Phase 3 product cut; iOS can wait.
+
+**Consequences:** Treat SOS as verified on Android only. Do not start blueprint Phase 4 AI (or 5–8) without a new decision that defines cut + acceptance of validation risk.
+
+---
+
+## D-015 — Phase 3 cut: thin SOS (confirm → foreground location → SMS/Share)
+
+**Status:** Accepted (2026-07-26)
+
+**Context:** Blueprint Phase 3 lists shake/fall detection, live share, insurance, nearby hospitals. Building all at once repeats over-scope failure.
+
+**Decision — in scope for Phase 3:**
+- **3.1** SOS entry + explicit confirm (Alert) — no auto-send
+- **3.2** Notify via device SMS (`expo-sms`) and/or Share sheet with prefilled message (maps link)
+- **3.3** Foreground location only while SOS session active (`expo-location`); clear End SOS
+- **3.4** Hub at `/emergency` linking static card (`/profile/emergency`); offline card unchanged
+- Local SOS session in AsyncStorage; no server “emergency events” table yet; no background tracking
+
+**Explicitly deferred:** Shake/fall detection, always-on background location, ambulance dispatch, nearby covered hospitals, auto-call 112/108, doctor portal emergency.
+
+**Why:** Least-privilege, India-first notify via user-owned messaging; distinct from static 1.5 card; Android-primary verification.
+
+**Consequences:** Copy must say HealthShield does not call emergency services. Contacts never get data without user tapping Send. Keep bottom tabs at five (emergency is a hidden stack).
+
+---
+
 ## D-014 — Phase 2 exit: Apple Health built; iOS testing pending
 
 **Status:** Accepted (2026-07-26) — founder override

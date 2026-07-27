@@ -9,6 +9,7 @@ import { Card, PressableCard } from '@/components/card';
 import { Chip } from '@/components/chip';
 import { EmptyState } from '@/components/empty-state';
 import { IconBadge } from '@/components/icon-badge';
+import { ReminderStatusCard } from '@/components/reminder-status-card';
 import { Screen } from '@/components/screen';
 import { SkeletonCard } from '@/components/skeleton';
 import { ThemedText } from '@/components/themed-text';
@@ -92,16 +93,10 @@ export default function MedicationsListScreen() {
         </EmptyState>
       ) : (
         <View style={styles.list}>
-          <Card variant="tinted" style={styles.noteCard}>
-            <IconBadge icon="notifications" tint="amber" size={40} />
-            <View style={styles.noteBody}>
-              <ThemedText type="smallBold">Local reminders</ThemedText>
-              <ThemedText type="caption" themeColor="textSecondary">
-                Reminders stay on this device. Expo Go on Android may skip them — use a
-                development build for reliable alerts.
-              </ThemedText>
-            </View>
-          </Card>
+          <ReminderStatusCard
+            detail="Dose reminders stay on this device and are not synced across phones."
+            hideWhenGranted
+          />
 
           {medications.map((med, index) => (
             <Animated.View key={med.id} entering={FadeInDown.delay(index * 40).springify()}>
@@ -146,15 +141,6 @@ export default function MedicationsListScreen() {
 const styles = StyleSheet.create({
   list: {
     gap: Spacing.two + Spacing.half,
-  },
-  noteCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-  },
-  noteBody: {
-    flex: 1,
-    gap: Spacing.half,
   },
   medCard: {
     flexDirection: 'row',

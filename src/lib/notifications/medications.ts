@@ -1,12 +1,12 @@
 import { Platform } from 'react-native';
 
+import { ensureNotificationHandler } from '@/lib/notifications/renewals';
 import {
-  ensureNotificationHandler,
-  requestNotificationPermissions,
-} from '@/lib/notifications/renewals';
-import {
+  ensureNotificationPermissions,
+  getNotificationCapability,
   getNotificationsModule,
   type NotificationsModule,
+  type ReminderSyncResult,
 } from '@/lib/notifications/runtime';
 import type { Medication } from '@/lib/supabase/database.types';
 
@@ -36,10 +36,12 @@ async function ensureAndroidChannel(Notifications: NotificationsModule) {
 }
 
 /** Cancel prior med reminders, then schedule daily repeats for enabled active meds. */
-export async function syncMedicationNotifications(medications: Medication[]) {
+export async function syncMedicationNotifications(
+  medications: Medication[]
+): Promise<ReminderSyncResult> {
   const Notifications = await getNotificationsModule();
   if (!Notifications) {
-    return { scheduled: 0, skipped: true as const };
+    return { scheduled: 0, capability: await getNotificationCapability() };
   }
 
   await ensureNotificationHandler();
@@ -56,12 +58,12 @@ export async function syncMedicationNotifications(medications: Medication[]) {
     (m) => m.active && m.reminder_enabled && m.reminder_times.length > 0
   );
   if (enabled.length === 0) {
-    return { scheduled: 0, skipped: false as const };
+    return { scheduled: 0, capability: await getNotificationCapability() };
   }
 
-  const granted = await requestNotificationPermissions();
-  if (!granted) {
-    return { scheduled: 0, skipped: true as const };
+  const capability = await ensureNotificationPermissions();
+  if (capability.status !== 'granted') {
+    return { scheduled: 0, capability };
   }
 
   let scheduled = 0;
@@ -92,5 +94,5 @@ export async function syncMedicationNotifications(medications: Medication[]) {
     }
   }
 
-  return { scheduled, skipped: false as const };
+  return { scheduled, capability };
 }

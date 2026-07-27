@@ -10,6 +10,7 @@ import { Card } from '@/components/card';
 import { Chip, SelectChip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
 import { IconBadge } from '@/components/icon-badge';
+import { ReminderStatusCard } from '@/components/reminder-status-card';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { TextField } from '@/components/text-field';
@@ -310,10 +311,10 @@ export default function ProfileScreen() {
               A clear card for responders. Cached on this device for offline use.
             </ThemedText>
             <Button
-              label="Open emergency card"
+              label="Open emergency hub"
               icon="medkit"
               variant="secondary"
-              onPress={() => router.push('/profile/emergency')}
+              onPress={() => router.push('/emergency')}
             />
           </Card>
 
@@ -358,6 +359,17 @@ export default function ProfileScreen() {
               ))}
             </View>
           </Card>
+
+          <View style={styles.remindersBlock}>
+            <View style={styles.cardTitleRow}>
+              <IconBadge icon="notifications" tint="amber" size={34} />
+              <ThemedText type="section">Reminders</ThemedText>
+            </View>
+            <ThemedText type="caption" themeColor="textSecondary">
+              Policy renewals and medication doses use local notifications on this device.
+            </ThemedText>
+            <ReminderStatusCard />
+          </View>
 
           <Card style={styles.formCard}>
             <View style={styles.cardTitleRow}>
@@ -526,6 +538,9 @@ const styles = StyleSheet.create({
   },
   formCard: {
     gap: Spacing.three,
+  },
+  remindersBlock: {
+    gap: Spacing.two,
   },
   chips: {
     flexDirection: 'row',

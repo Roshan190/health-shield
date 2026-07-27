@@ -1,9 +1,9 @@
-# User notes (Phase 0)
+# User notes (Phase 0 + ongoing)
 
-**Status:** Real interviews **not done**. Section below is **SYNTHETIC** (AI-generated, realistic fiction) for planning only.  
-**Date:** 2026-07-24
+**Status:** Synthetic S1–S8 (planning only) + **real feedback started 2026-07-27** (founder-shared).  
+**Date:** 2026-07-24 (synthetic) · 2026-07-27 (first real log)
 
-**Correction:** Synthetic notes must **not** be used to mark Phase 0 complete or to claim user validation. Run real chats before locking D-001 as “validated.”
+**Correction:** Synthetic notes must **not** be treated as validated research. Prefer the Real interview log below when making product cuts.
 
 ---
 
@@ -156,11 +156,21 @@ Capture: age band, city tier, #family members, iOS/Android, watch yes/no.
 
 ---
 
-## Real interview log
+## Real interview / feedback log
 
-*(empty — replace synthetic reliance with real entries here)*
+Log real people only. No PII beyond age band / city tier / platform. Expand as chats accumulate.
 
-### Interview N — YYYY-MM-DD
+### Feedback R1 — 2026-07-27 (founder-shared; informal)
+
+- Persona: Real users the founder shared the Android build with (household / acquaintances). Exact personas not captured in a formal script pass.
+- Platform: Android (primary)
+- Quotes / summary (paraphrased by founder):
+  - Liked the **idea** and the **app as built** (Foundation + health tracking + SOS).
+- Pain ranking: Not captured in ranked form this round.
+- Hypotheses: Informal support for continuing Foundation deepen before AI (aligned with H3: organizer value before AI).
+- Product implication: Founder chose **Q2 deepen Foundation (D-017)** over starting Phase 4 AI. Follow up with a fuller script interview when possible.
+
+### Template — YYYY-MM-DD
 
 - Persona:
 - Platform:
@@ -176,5 +186,5 @@ Capture: age band, city tier, #family members, iOS/Android, watch yes/no.
 Update:
 
 1. Top 5 pain points (replace desk + synthetic lists if needed)
-2. `DECISIONS.md` D-001 — confirm or amend
-3. `PROGRESS.md` — Phase 0 → complete
+2. `DECISIONS.md` D-001 — confirm or amend if evidence conflicts
+3. Keep logging here; do not invent quotes

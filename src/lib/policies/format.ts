@@ -1,3 +1,4 @@
+import { formatDisplayDate, parseISODate } from '@/lib/dates';
 import type { PolicyType } from '@/lib/supabase/database.types';
 
 export const POLICY_TYPES: { value: PolicyType; label: string }[] = [
@@ -47,23 +48,18 @@ export function formatDate(value: string | null | undefined) {
   if (!value) {
     return '—';
   }
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) {
+  if (!parseISODate(value)) {
     return value;
   }
-  return date.toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  return formatDisplayDate(value);
 }
 
 /** Days until renewal; negative if past. null if no date. */
 export function daysUntil(renewalDate: string | null | undefined) {
-  if (!renewalDate) {
+  const target = parseISODate(renewalDate);
+  if (!target) {
     return null;
   }
-  const target = new Date(`${renewalDate}T00:00:00`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const diff = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
