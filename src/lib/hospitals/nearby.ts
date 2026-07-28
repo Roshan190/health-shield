@@ -21,6 +21,8 @@ export type NearbyHospital = {
 export type NearbyHospitalsResult = {
   hospitals: NearbyHospital[];
   disclaimer: string;
+  mode?: 'search' | 'nearby';
+  query?: string | null;
   fromCache?: boolean;
   cachedAt?: string;
 };
@@ -91,25 +93,34 @@ function cacheStillValid(entry: CacheEntry, latitude: number, longitude: number)
 }
 
 async function invokeNearbyLive(params: {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   radiusM?: number;
+  query?: string;
 }): Promise<NearbyHospitalsResult> {
+  const body: Record<string, unknown> = {};
+  if (typeof params.latitude === 'number' && typeof params.longitude === 'number') {
+    body.latitude = params.latitude;
+    body.longitude = params.longitude;
+  }
+  if (params.radiusM != null) {
+    body.radius_m = params.radiusM;
+  }
+  if (params.query?.trim()) {
+    body.query = params.query.trim();
+  }
+
   const { data, error } = await getSupabase().functions.invoke('nearby-hospitals', {
-    body: {
-      latitude: params.latitude,
-      longitude: params.longitude,
-      radius_m: params.radiusM,
-    },
+    body,
   });
 
   if (error) {
     const context = (error as { context?: Response }).context;
     if (context) {
       try {
-        const body = (await context.clone().json()) as FunctionErrorBody;
-        if (body.error) {
-          throw new NearbyHospitalsError(body.error, body.code);
+        const bodyJson = (await context.clone().json()) as FunctionErrorBody;
+        if (bodyJson.error) {
+          throw new NearbyHospitalsError(bodyJson.error, bodyJson.code);
         }
       } catch (e) {
         if (e instanceof NearbyHospitalsError) {
@@ -130,20 +141,46 @@ async function invokeNearbyLive(params: {
     disclaimer:
       payload?.disclaimer ??
       'Hospitals near you from Mapbox. This is not a cashless or insurer network list — confirm coverage with your insurer before admission.',
+    mode: payload?.mode === 'search' || payload?.mode === 'nearby' ? payload.mode : undefined,
+    query: typeof payload?.query === 'string' ? payload.query : payload?.query === null ? null : undefined,
   };
 }
 
 /**
- * Fetch nearby hospitals. Tries live Overpass first; on failure falls back to
- * a same-area AsyncStorage cache (up to 24h). Successful live results refresh the cache.
+ * Fetch nearby hospitals (category) or search by name/place text (query).
+ * Category results cache by grid; text search is not cached.
  */
 export async function fetchNearbyHospitals(params: {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   radiusM?: number;
+  query?: string;
 }): Promise<NearbyHospitalsResult> {
+  const query = params.query?.trim() ?? '';
+  const isSearch = query.length >= 2;
+
+  if (isSearch) {
+    return {
+      ...(await invokeNearbyLive({
+        latitude: params.latitude,
+        longitude: params.longitude,
+        radiusM: params.radiusM,
+        query,
+      })),
+      fromCache: false,
+    };
+  }
+
+  if (typeof params.latitude !== 'number' || typeof params.longitude !== 'number') {
+    throw new NearbyHospitalsError('Location is required to load nearby hospitals.', 'bad_coords');
+  }
+
   try {
-    const live = await invokeNearbyLive(params);
+    const live = await invokeNearbyLive({
+      latitude: params.latitude,
+      longitude: params.longitude,
+      radiusM: params.radiusM,
+    });
     await writeCache({
       gridKey: gridKey(params.latitude, params.longitude),
       latitude: params.latitude,

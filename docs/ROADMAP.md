@@ -332,7 +332,7 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 ### Slice N1 — Nearby list + map
 
 - Edge Function `nearby-hospitals` (Mapbox Search Box; secret `MAPBOX_ACCESS_TOKEN`) + foreground location
-- List / Map toggle with Mapbox GL JS WebView (public `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN`); Open in Maps from Emergency hub
+- List / Map toggle with Mapbox GL JS WebView (public `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN`); Open in Maps from **Hospitals hub** (`/hospitals`; also linked from Emergency)
 - No ratings; OSM / Google Maps / `@rnmapbox/maps` parked
 
 ### Slice N2 — Preferred hospitals
@@ -348,7 +348,36 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 4. Copy does not claim insurer-verified cashless or invent ratings
 5. `PROGRESS.md` updated
 
-**Deferred:** Google Maps/Places / ratings, insurer network APIs, ambulance.
+**Deferred:** Google Maps/Places / ratings, insurer network APIs (superseded for thin cut by **D-025** deep links), ambulance.
+
+---
+
+## Phase C — Hospitals hub + thin cashless deep links (D-025)
+
+**Entered:** 2026-07-28 after founder override (**D-025**).
+
+**Goal:** Promote hospitals to a Home-reachable hub; assist cashless via **official insurer deep links** only — never invent in-app cashless results.
+
+### Slice C1–C2 — Cashless assist
+
+- Curated insurer → official network URL (+ optional helpline); fuzzy-match `policies.insurer`
+- Open in system browser; honest non-verification copy
+- Policy detail CTA when matched
+
+### Slice C3–C4 — Hub UI / nav
+
+- Top-level `/hospitals` + Home “Hospitals” quick action; Emergency keeps a link; no sixth tab
+- Segments Nearby | Preferred | Cashless; map-first for geographic segments; Cashless = deep-link cards only
+
+### Exit criteria
+
+1. Home → Hospitals opens hub
+2. Nearby / Preferred still work (Mapbox)
+3. Cashless opens official insurer tool for curated matches; unmatched is honest
+4. Copy does not claim HealthShield-verified cashless
+5. `PROGRESS.md` updated
+
+**Deferred:** scrape/cache network lists; in-app cashless pins; partner/NHCX APIs; company+pincode HealthShield search results.
 
 ---
 
@@ -356,7 +385,7 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 
 Do **not** start early. Blueprint Phases 5–8 stay deferred until a thin cut + override is recorded in `DECISIONS.md`.
 
-**Recent exits:** Phase 4 AI (**D-020**); household (**D-021**); policy PDF (**D-023**). Phase N (nearby hospitals) in progress via **D-024**.
+**Recent exits:** Phase 4 AI (**D-020**); household (**D-021**); policy PDF (**D-023**). Phase N (nearby) + Phase C (hub/cashless assist) in progress via **D-024** / **D-025**.
 
 ---
 

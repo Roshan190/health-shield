@@ -16,6 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSessionStore } from '@/lib/auth/session-store';
+import { safeBack } from '@/lib/navigation/safe-back';
 import { parseTags, RECORD_CATEGORIES } from '@/lib/records/format';
 import {
   attachDocumentsToRecord,
@@ -276,7 +277,12 @@ export default function NewRecordScreen() {
         loading={saving}
         onPress={onSave}
       />
-      <Button label="Cancel" variant="ghost" onPress={() => router.back()} disabled={saving} />
+      <Button
+        label="Cancel"
+        variant="ghost"
+        onPress={() => safeBack(router, '/health/records')}
+        disabled={saving}
+      />
     </Screen>
   );
 }

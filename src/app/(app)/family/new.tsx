@@ -16,6 +16,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSessionStore } from '@/lib/auth/session-store';
 import { FAMILY_RELATIONSHIPS, FAMILY_ROLES } from '@/lib/family/format';
+import { safeBack } from '@/lib/navigation/safe-back';
 import { getSupabase } from '@/lib/supabase/client';
 import type { FamilyRelationship, FamilyRole } from '@/lib/supabase/database.types';
 
@@ -186,7 +187,12 @@ export default function NewFamilyMemberScreen() {
       ) : null}
 
       <Button label="Save member" icon="checkmark" loading={saving} onPress={onSave} />
-      <Button label="Cancel" variant="ghost" onPress={() => router.back()} disabled={saving} />
+      <Button
+        label="Cancel"
+        variant="ghost"
+        onPress={() => safeBack(router, '/family')}
+        disabled={saving}
+      />
     </Screen>
   );
 }

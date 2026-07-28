@@ -16,6 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSessionStore } from '@/lib/auth/session-store';
+import { safeBack } from '@/lib/navigation/safe-back';
 import {
   deleteOcrTempPdf,
   extractPolicyFields,
@@ -472,7 +473,7 @@ export default function NewPolicyScreen() {
       <Button
         label="Cancel"
         variant="ghost"
-        onPress={() => router.back()}
+        onPress={() => safeBack(router, '/policies')}
         disabled={saving || extracting}
       />
     </Screen>

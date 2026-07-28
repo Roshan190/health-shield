@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, {
@@ -182,12 +182,12 @@ export default function EmergencyHubScreen() {
           <Animated.View entering={FadeInDown.duration(400).delay(140)}>
             <PressableCard
               style={styles.linkCard}
-              onPress={() => router.push('/emergency/hospitals')}>
+              onPress={() => router.push('/hospitals' as Href)}>
               <IconBadge icon="medkit" tint="teal" size={48} />
               <View style={styles.flex}>
-                <ThemedText type="smallBold">Nearby hospitals</ThemedText>
+                <ThemedText type="smallBold">Hospitals</ThemedText>
                 <ThemedText type="caption" themeColor="textSecondary">
-                  Find hospitals near you and mark preferred ones.
+                  Nearby map, preferred list, and insurer cashless tools.
                 </ThemedText>
               </View>
               <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />

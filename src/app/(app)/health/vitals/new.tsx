@@ -16,6 +16,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSessionStore } from '@/lib/auth/session-store';
 import { toISODate } from '@/lib/dates';
+import { safeBack } from '@/lib/navigation/safe-back';
 import { getSupabase } from '@/lib/supabase/client';
 import type { VitalType } from '@/lib/supabase/database.types';
 import {
@@ -250,7 +251,12 @@ export default function NewVitalScreen() {
       ) : null}
 
       <Button label="Save reading" icon="checkmark" loading={saving} onPress={onSave} />
-      <Button label="Cancel" variant="ghost" onPress={() => router.back()} disabled={saving} />
+      <Button
+        label="Cancel"
+        variant="ghost"
+        onPress={() => safeBack(router, '/health/vitals')}
+        disabled={saving}
+      />
     </Screen>
   );
 }

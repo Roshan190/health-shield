@@ -59,10 +59,11 @@ type QuickAction = {
   soon?: string;
 };
 
-/** Thin Home CTAs only — full feature map lives in tabs / Health hub (D-012). */
+/** Thin Home CTAs only — full feature map lives in tabs / Health hub (D-012 / D-025). */
 const QUICK_ACTIONS: QuickAction[] = [
   { key: 'health', label: 'Health', icon: 'fitness', tint: 'teal', route: '/health' },
   { key: 'add-policy', label: 'Policy', icon: 'add-circle', tint: 'blue', route: '/policies/new' },
+  { key: 'hospitals', label: 'Hospitals', icon: 'business', tint: 'teal', route: '/hospitals' },
   { key: 'emergency', label: 'Emergency', icon: 'medkit', tint: 'red', route: '/emergency' },
 ];
 
@@ -517,11 +518,15 @@ const styles = StyleSheet.create({
   },
   actionsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two + Spacing.half,
   },
   actionCell: {
-    flex: 1,
-    minWidth: 0,
+    // 2×2 grid when 4 quick actions (D-025 Hospitals); still works for 3.
+    width: '48%',
+    flexGrow: 1,
+    minWidth: '46%',
+    maxWidth: '48%',
   },
   actionCard: {
     alignItems: 'flex-start',

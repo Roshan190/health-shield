@@ -6,6 +6,27 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 ---
 
+## D-025 — Hospitals hub + thin cashless deep links (override)
+
+**Status:** Accepted (2026-07-28) — founder approval after planning memo
+
+**Context:** D-024 ships Mapbox nearby + preferred under Emergency with honest non-cashless copy. Founder wants (1) evaluation of true cashless lookup and (2) a more interactive hospitals UI quickly reachable outside Emergency. Evaluation: no universal public cashless API; NHCX ≠ consumer directory; partner APIs unavailable; scrape = legal/maintenance/false-claim risk; company+pincode in-app results not trustworthy without a feed.
+
+**Decision — in scope (Phase C thin):**
+- **C1** Curated major-insurer → official network-hospital URL (+ optional helpline); fuzzy-match free-text `policies.insurer`
+- **C2** Cashless assist opens official URL in system browser; copy: HealthShield does not verify empanelment — confirm with insurer/hospital/TPA desk
+- **C3** Promote hospitals to top-level `/hospitals` hub + Home quick action “Hospitals”. Keep Emergency hub link. Do **not** add a sixth bottom tab (D-012). Home quick actions may include Hospitals without becoming a full feature map
+- **C4** Interactive redesign: map-first + list sheet; segments Nearby | Preferred | Cashless (deep-link cards only on Cashless). No cashless badges on Mapbox pins
+- D-024 geographic nearby + preferred remain; cashless is assist-only
+
+**Explicitly deferred / forbidden:** scraping/caching network lists; in-app cashless result pins; company+pincode HealthShield search results; NHCX/partner APIs; ratings; ambulance.
+
+**Why:** Deep links keep the insurer as source of truth. Hub + Home CTA match urgency without burying hospitals in Emergency or inventing coverage.
+
+**Consequences:** Do not market as cashless finder. Expand curated URL list carefully; unmatched insurers get guidance only. True API-backed cashless matching needs a future decision + partner path. Phase N Mapbox smoke remains independent.
+
+---
+
 ## D-024 — Nearby hospitals list + user preferred (override)
 
 **Status:** Accepted (2026-07-27) — founder override after D-023 park; **amended: Mapbox Search + Mapbox Maps UI (no Google Maps key)**

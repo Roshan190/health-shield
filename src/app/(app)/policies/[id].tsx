@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
@@ -21,6 +21,10 @@ import { Overlay, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useGradients, useTheme } from '@/hooks/use-theme';
 import { SummarizeError, summarizeItem } from '@/lib/ai/summarize';
 import { useSessionStore } from '@/lib/auth/session-store';
+import {
+  CASHLESS_ASSIST_DISCLAIMER,
+  matchInsurerNetwork,
+} from '@/lib/hospitals/insurers';
 import {
   formatDate,
   formatInr,
@@ -400,6 +404,7 @@ export default function PolicyDetailScreen() {
   const visual = policyVisual(policy.policy_type);
   const tone = renewalTone(policy.renewal_date);
   const isOwner = Boolean(user && policy.user_id === user.id);
+  const cashlessMatch = matchInsurerNetwork(insurer);
 
   return (
     <Screen
@@ -478,6 +483,47 @@ export default function PolicyDetailScreen() {
           void onSummarize();
         }}
       />
+
+      <Card style={styles.formCard}>
+        <View style={styles.cardTitleRow}>
+          <IconBadge icon="link" tint="blue" size={34} />
+          <View style={styles.cashlessCopy}>
+            <ThemedText type="section">Cashless hospitals</ThemedText>
+            <ThemedText type="caption" themeColor="textSecondary">
+              {CASHLESS_ASSIST_DISCLAIMER}
+            </ThemedText>
+          </View>
+        </View>
+        {cashlessMatch ? (
+          <>
+            <ThemedText type="small" themeColor="textSecondary">
+              Opens {cashlessMatch.canonicalName}’s official network hospital tool
+              {cashlessMatch.helpline ? ` · Helpline ${cashlessMatch.helpline}` : ''}.
+            </ThemedText>
+            <Button
+              label="Open insurer network"
+              icon="open-outline"
+              variant="secondary"
+              onPress={() => {
+                void Linking.openURL(cashlessMatch.networkHospitalsUrl);
+              }}
+              disabled={saving}
+            />
+          </>
+        ) : (
+          <ThemedText type="small" themeColor="textSecondary">
+            No curated link for this insurer name yet. Use Hospitals → Cashless after saving, or
+            search the insurer’s official website.
+          </ThemedText>
+        )}
+        <Button
+          label="Open Hospitals hub"
+          icon="business"
+          variant="ghost"
+          onPress={() => router.push('/hospitals' as Href)}
+          disabled={saving}
+        />
+      </Card>
 
       {isOwner ? (
         <VaultItemShareCard
@@ -744,6 +790,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two + Spacing.half,
+  },
+  cashlessCopy: {
+    flex: 1,
+    gap: Spacing.half,
   },
   chips: {
     flexDirection: 'row',

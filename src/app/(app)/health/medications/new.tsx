@@ -15,6 +15,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSessionStore } from '@/lib/auth/session-store';
 import { isValidReminderTime, normalizeReminderTimes } from '@/lib/medications/format';
+import { safeBack } from '@/lib/navigation/safe-back';
 import { syncMedicationNotifications } from '@/lib/notifications/medications';
 import { getSupabase } from '@/lib/supabase/client';
 
@@ -239,7 +240,12 @@ export default function NewMedicationScreen() {
       ) : null}
 
       <Button label="Save medication" icon="checkmark" loading={saving} onPress={onSave} />
-      <Button label="Cancel" variant="ghost" onPress={() => router.back()} disabled={saving} />
+      <Button
+        label="Cancel"
+        variant="ghost"
+        onPress={() => safeBack(router, '/health/medications')}
+        disabled={saving}
+      />
     </Screen>
   );
 }

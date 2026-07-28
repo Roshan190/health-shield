@@ -71,6 +71,13 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           }
 
           const focused = state.index === index;
+          const nestedState = state.routes[index]?.state as
+            | { index?: number; routes?: { name: string }[] }
+            | undefined;
+          const nestedIndex = nestedState?.index ?? 0;
+          const nestedRouteName = nestedState?.routes?.[nestedIndex]?.name;
+          const isAtTabRoot =
+            !nestedState || nestedIndex === 0 || nestedRouteName === 'index';
 
           const onPress = () => {
             const event = navigation.emit({
@@ -78,7 +85,22 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
               target: route.key,
               canPreventDefault: true,
             });
-            if (!focused && !event.defaultPrevented) {
+            if (event.defaultPrevented) {
+              return;
+            }
+
+            // Re-tap active tab (or switch back to a tab with leftover stack): always
+            // open that tab's index so nested screens don't trap the user.
+            if (focused) {
+              if (!isAtTabRoot) {
+                navigation.navigate(route.name, { screen: 'index' });
+              }
+              return;
+            }
+
+            if (!isAtTabRoot) {
+              navigation.navigate(route.name, { screen: 'index' });
+            } else {
               navigation.navigate(route.name, route.params);
             }
           };
