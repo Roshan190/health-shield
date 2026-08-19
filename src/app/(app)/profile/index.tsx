@@ -12,18 +12,21 @@ import { DateField } from '@/components/date-field';
 import { IconBadge } from '@/components/icon-badge';
 import { ReminderStatusCard } from '@/components/reminder-status-card';
 import { Screen } from '@/components/screen';
+import { SideloadUpdateCard } from '@/components/sideload-update-card';
 import { Skeleton } from '@/components/skeleton';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Overlay, Radius, Spacing } from '@/constants/theme';
 import { useGradients, useTheme } from '@/hooks/use-theme';
 import { deleteAccountCompletely, exportAccountData } from '@/lib/account/data-lifecycle';
+import { revokeOtherSessions } from '@/lib/auth/password-recovery';
 import { useSessionStore } from '@/lib/auth/session-store';
 import { saveEmergencyCardSnapshot } from '@/lib/emergency/card-store';
 import { formatDate } from '@/lib/policies/format';
 import { getSupabase } from '@/lib/supabase/client';
 import type { Profile } from '@/lib/supabase/database.types';
 import { THEME_OPTIONS, useThemeStore } from '@/lib/theme/theme-store';
+import { sideloadUpdateUnsupported } from '@/lib/updates/sideload';
 
 const profileSchema = z.object({
   full_name: z.string().trim().min(1, 'Name is required'),
@@ -64,6 +67,10 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busyAccount, setBusyAccount] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const loadProfile = useCallback(async () => {
     if (!user) {
@@ -161,6 +168,53 @@ export default function ProfileScreen() {
     const { error: signOutError } = await getSupabase().auth.signOut();
     if (signOutError) {
       setError(signOutError.message);
+    }
+  }
+
+  async function onChangePassword() {
+    if (!user?.email) {
+      return;
+    }
+    setError(null);
+    setStatus(null);
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    if (!currentPassword) {
+      setError('Enter your current password');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { error: verifyError } = await getSupabase().auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (verifyError) {
+        setError('Current password is incorrect');
+        return;
+      }
+      const { error: updateError } = await getSupabase().auth.updateUser({ password: newPassword });
+      if (updateError) {
+        setError(updateError.message);
+        return;
+      }
+      await revokeOtherSessions();
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setStatus('Password updated. Other signed-in devices were signed out.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not update password');
+    } finally {
+      setChangingPassword(false);
     }
   }
 
@@ -394,6 +448,20 @@ export default function ProfileScreen() {
             </View>
           </Card>
 
+          {sideloadUpdateUnsupported() ? null : (
+            <View style={styles.remindersBlock}>
+              <View style={styles.cardTitleRow}>
+                <IconBadge icon="phone-portrait" tint="blue" size={34} />
+                <ThemedText type="section">App version</ThemedText>
+              </View>
+              <ThemedText type="caption" themeColor="textSecondary">
+                Sideloaded Android builds can check the HealthShield site for a newer APK. Later on
+                the popup does not hide this.
+              </ThemedText>
+              <SideloadUpdateCard />
+            </View>
+          )}
+
           <View style={styles.remindersBlock}>
             <View style={styles.cardTitleRow}>
               <IconBadge icon="notifications" tint="amber" size={34} />
@@ -425,6 +493,53 @@ export default function ProfileScreen() {
               value={emergencyPhone}
               onChangeText={setEmergencyPhone}
               keyboardType="phone-pad"
+            />
+          </Card>
+
+          <Card style={styles.formCard}>
+            <View style={styles.cardTitleRow}>
+              <IconBadge icon="key" tint="blue" size={34} />
+              <ThemedText type="section">Password</ThemedText>
+            </View>
+            <ThemedText type="caption" themeColor="textSecondary">
+              Changing it here also changes sign-in for the doctor portal. Other devices are signed
+              out.
+            </ThemedText>
+            <TextField
+              label="Current password"
+              icon="lock-closed"
+              autoCapitalize="none"
+              autoComplete="password"
+              secureTextEntry
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+            />
+            <TextField
+              label="New password"
+              icon="lock-closed"
+              autoCapitalize="none"
+              autoComplete="new-password"
+              placeholder="Min 8 characters"
+              secureTextEntry
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+            <TextField
+              label="Confirm new password"
+              icon="lock-closed"
+              autoCapitalize="none"
+              autoComplete="new-password"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <Button
+              label="Update password"
+              icon="checkmark"
+              variant="secondary"
+              loading={changingPassword}
+              onPress={() => void onChangePassword()}
+              disabled={saving || busyAccount}
             />
           </Card>
 

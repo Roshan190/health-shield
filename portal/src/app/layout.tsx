@@ -1,14 +1,17 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { signOut } from '@/app/visits/actions';
 import { ShieldMark } from '@/components/icons';
+import { RECOVERY_COOKIE } from '@/lib/auth/recovery-cookie';
 import { createServerSupabase } from '@/lib/supabase/server';
 
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://portal.health-shield.in'),
   title: 'HealthShield doctor portal',
   description: 'View a time-boxed visit pack the patient granted. Not a HealthShield clinic.',
 };
@@ -18,6 +21,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const recovering = (await cookies()).get(RECOVERY_COOKIE)?.value === '1';
+  const homeHref = recovering ? '/reset-password' : user ? '/visits' : '/login';
 
   return (
     <html lang="en">
@@ -27,7 +32,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </a>
         <header className="site-header">
           <div className="header-inner">
-            <Link className="brand" href={user ? '/visits' : '/login'}>
+            <Link className="brand" href={homeHref}>
               <span className="brand-mark">
                 <ShieldMark />
               </span>

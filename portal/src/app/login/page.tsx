@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -17,12 +18,20 @@ export default function LoginPage() {
     setBusy(mode);
     setError(null);
     setInfo(null);
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      setBusy(null);
+      return;
+    }
     const supabase = createBrowserSupabase();
 
     if (mode === 'signup') {
       const { data, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/visits`,
+        },
       });
       if (authError) {
         setError(authError.message);
@@ -77,12 +86,15 @@ export default function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
-            minLength={6}
+            minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
           {error ? <p className="error">{error}</p> : null}
           {info ? <p className="success">{info}</p> : null}
+          <p className="auth-links">
+            <Link href="/forgot-password">Forgot password?</Link>
+          </p>
           <div className="auth-actions">
             <button className="btn" type="submit" disabled={busy !== null}>
               {busy === 'signin' ? 'Signing in…' : 'Sign in'}

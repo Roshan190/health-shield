@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 
 import { useThemeName } from '@/hooks/use-theme';
 import { AuthProvider } from '@/lib/auth/auth-provider';
-import { useIsAuthenticated, useSessionStore } from '@/lib/auth/session-store';
+import { useIsAuthenticated, usePasswordRecovery, useSessionStore } from '@/lib/auth/session-store';
 import { ensureNotificationHandler } from '@/lib/notifications/renewals';
 import { useThemeStore } from '@/lib/theme/theme-store';
 
@@ -16,6 +16,7 @@ SplashScreen.setOptions({ duration: 450, fade: true });
 function RootNavigator() {
   const themeName = useThemeName();
   const isAuthenticated = useIsAuthenticated();
+  const passwordRecovery = usePasswordRecovery();
   const isSessionHydrated = useSessionStore((s) => s.isHydrated);
   const isThemeHydrated = useThemeStore((s) => s.isHydrated);
   const hydrateTheme = useThemeStore((s) => s.hydrate);
@@ -42,10 +43,13 @@ function RootNavigator() {
     <ThemeProvider value={themeName === 'dark' ? DarkTheme : DefaultTheme}>
       <StatusBar style={themeName === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Protected guard={isAuthenticated}>
+        <Stack.Protected guard={passwordRecovery}>
+          <Stack.Screen name="reset-password" />
+        </Stack.Protected>
+        <Stack.Protected guard={isAuthenticated && !passwordRecovery}>
           <Stack.Screen name="(app)" />
         </Stack.Protected>
-        <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Protected guard={!isAuthenticated && !passwordRecovery}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
       </Stack>

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { z } from 'zod';
 
@@ -116,6 +116,13 @@ export default function SignInScreen() {
               </ThemedText>
             </View>
           ) : null}
+          <Link href="/forgot-password" asChild>
+            <Pressable accessibilityRole="link" disabled={loading} style={styles.forgotWrap}>
+              <ThemedText type="small" themeColor="primary">
+                Forgot password?
+              </ThemedText>
+            </Pressable>
+          </Link>
           <Button label="Sign in" icon="log-in" loading={loading} onPress={onSignIn} />
           <Link href="/sign-up" asChild>
             <Button label="Create account" variant="secondary" disabled={loading} />
@@ -186,6 +193,10 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     flex: 1,
+  },
+  forgotWrap: {
+    alignSelf: 'flex-start',
+    paddingVertical: Spacing.one,
   },
   trustRow: {
     flexDirection: 'row',

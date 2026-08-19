@@ -564,6 +564,19 @@ input:focus {
   text-align: center;
 }
 
+.auth-links {
+  margin: 14px 0 0;
+  font-size: 0.9rem;
+}
+
+.auth-links a {
+  text-decoration: none;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
 /* ---------- Files ---------- */
 
 .file {

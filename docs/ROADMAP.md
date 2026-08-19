@@ -468,8 +468,9 @@ Do not implement. Policy PDF draft (D-022) remains. Record OCR stays parked unti
 **Entered:** 2026-08-13 after Phase 5 exit (**D-033**). Not a product feature phase.
 
 - Static marketing site in `site/` (no keys). Android APK via EAS `production` profile — env on Expo, not in git
-- **D-029 security gate must PASS** before the APK or download page is **public**. Leaked-password is still FAIL (Pro). **D-034:** production APK **build** may proceed anyway; do not publish until PASS or a later public-ship waiver
+- **D-029** still records leaked-password **FAIL**. **D-037** waived that check as a publish blocker. **D-038** is the public ship: `health-shield.in` + `portal.health-shield.in` on **Vercel**, plus a **new** production APK with the portal URL baked in
 - Play Store later; iOS still parked
+- **D-040 (in code):** sideload-only “update available” Alert + Profile CTA via public `site/latest.json` (not Play in-app updates, not OTA). Next APK **1.1.1**.
 
 ---
 
@@ -485,6 +486,7 @@ Do not implement. Policy PDF draft (D-022) remains. Record OCR stays parked unti
 - Patient `/visit` (Profile entry, not a 6th tab): email + duration + pick owned policies/records; revoke
 - `portal/` Next.js: email auth; view-only pack + files
 - Copy: not HealthShield-employed; not a diagnosis; family share is separate
+- **D-039:** email password reset on app + portal (PKCE, recovery gate, HTTPS bounce). Not a new phase.
 
 ### Exit criteria
 
@@ -493,7 +495,7 @@ Do not implement. Policy PDF draft (D-022) remains. Record OCR stays parked unti
 3. No secrets in git or `portal/` public env beyond the same anon + URL pattern as the app
 4. `PROGRESS.md` updated
 
-**Deferred:** prescription upload, session notes, clinic admin, verified doctor identity, email invites, public APK.
+**Deferred:** prescription upload, session notes, clinic admin, verified doctor identity, email invites. Public APK/site/portal host: **D-038**.
 
 ---
 
@@ -501,7 +503,7 @@ Do not implement. Policy PDF draft (D-022) remains. Record OCR stays parked unti
 
 Do **not** start. Still needs a thin cut + override in `DECISIONS.md`.
 
-**Recent exits:** Phase 4 AI (**D-020**); household (**D-021**); policy PDF (**D-023**); nearby hospitals (**D-024**); hospitals hub + cashless assist (**D-025**); document Q&A (**D-032**); thin claims (**D-033**). Distribution APK built (**D-034**) but **not public**. **Now:** thin doctor visit portal (**D-035**).
+**Recent exits:** Phase 4 AI (**D-020**); household (**D-021**); policy PDF (**D-023**); nearby hospitals (**D-024**); hospitals hub + cashless assist (**D-025**); document Q&A (**D-032**); thin claims (**D-033**). Distribution APK built (**D-034**) then **public ship entered (D-038)**. **Also now:** thin doctor visit portal (**D-035**).
 
 ---
 

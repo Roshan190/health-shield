@@ -6,6 +6,67 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 ---
 
+## D-040 — Sideload “update available” prompt (not Play, not OTA)
+
+**Status:** Accepted (2026-08-19) — founder queued after D-039; Profile CTA if they dismiss the popup
+
+**Context:** First distribution is a marketing-site Android APK (D-028 / D-038), not Play Store. Sideloaded users otherwise sit on old builds. Play in-app updates and `expo-updates` OTA are out of this cut.
+
+**Decision:**
+- Public static `site/latest.json` on `https://health-shield.in`: a JSON **array** of releases (`version`, `versionCode`, `apkUrl`, `sha256`, `downloadPage`), newest `versionCode` is current. Keep prior public APKs in the array (do not list unpublished `d576dde7`). No secrets. `Cache-Control: no-store`. Keep the **first/current** row in lockstep with the site download section after each production APK. The app compares installed `versionCode` to the highest in the array.
+- Android production / dev-client only. Skip Expo Go (`Constants.appOwnership === 'expo'`), iOS, and web. Compare `expo-application` `nativeBuildVersion` to `versionCode`.
+- Soft Alert on launch and return-to-foreground: **“Update available — please update”**. Update opens `https://health-shield.in/#download` (checksum visible). **Later** dismisses that `versionCode` (AsyncStorage). Offline / parse errors: silent. Throttle repeated Alerts. Not a force-block.
+- Profile keeps an **App version** card with a **Get update** CTA even after Later.
+- **Out:** Play in-app updates, `expo-updates` OTA, auto-download APK, blocking the vault, doctor portal involvement.
+
+**Why:** Sideload users need a nudge without pretending we are on Play Store or shipping JS OTA over a health vault.
+
+**Consequences:** The prompt only exists in APKs that contain this code (1.1.1+). People on 1.1.0 still update from the site. After each EAS production build, update `latest.json` and `site/index.html` together before telling users to update. Play Store stays later (D-028).
+
+---
+
+## D-039 — Email password reset (app + doctor portal)
+
+**Status:** Accepted (2026-08-19) — founder: no way back in if the password is forgotten; add reset, securely
+
+**Context:** Public ship (D-038) uses email/password on the Expo app and `portal/`. There was no recovery path. Same Supabase Auth project for both surfaces. Leaked-password protection stays off (D-037).
+
+**Decision:**
+- **Email only** via `resetPasswordForEmail`. No SMS, security questions, or admin-set passwords.
+- **No enumeration:** the UI always says an account *if it exists* was emailed. Unknown addresses still look like success.
+- **PKCE** on the Expo client (`flowType: 'pkce'`). Portal already uses PKCE via `@supabase/ssr`.
+- **Per-surface `redirectTo` on the allow-list:** app → `https://health-shield.in/app-reset` (static bounce, no keys) then `healthshield://reset-password`; portal → `https://portal.health-shield.in/auth/confirm` then `/reset-password`. Local portal: `http://localhost:3000/auth/confirm`. Do not add `exp://**` in production. Smoke the app path on a **dev client or APK**, not Expo Go.
+- **Recovery gate:** the email link must not open the vault or visit packs. Show only “choose a new password” until `updateUser({ password })` succeeds. Persist the gate across app restarts until then.
+- **Revoke other sessions** after a successful reset (`signOut({ scope: 'others' })`).
+- **One password per email** for the app and the doctor portal — copy says so. Min 8 characters. Do not claim HaveIBeenPwned (D-037).
+- **Signed-in change password** on app Profile (current + new) uses the same update + revoke-others path. Portal stays view-only besides this recovery flow.
+- Leave the default recovery email template (it honors `redirect_to`). Do not point it only at Site URL.
+
+**Why:** Account lockout is a ship blocker; custom-scheme-only links fail in Gmail; PKCE stops a stolen `healthshield://` code from being exchanged without the verifier on the requesting device.
+
+**Consequences:** Founder must add the redirect URLs in Auth → URL configuration and confirm mail delivery (built-in SMTP is rate-limited / spam-prone). App recovery needs a new APK. Portal can ship on Vercel independently. Custom SMTP, App Links / Universal Links, magic-link-only login, and leaked-password Pro stay out.
+
+---
+
+## D-038 — Public ship: health-shield.in (Vercel for site + portal)
+
+**Status:** Accepted (2026-08-19) — founder: put the Android APK, marketing site, and doctor portal live; **host both web surfaces on Vercel** (not Cloudflare)
+
+**Context:** D-037 waived leaked-password as a *publish* blocker and required an explicit “put it live.” Founder bought `health-shield.in` (GoDaddy). GitHub repo `Roshan190/health-shield` is **private**. Play Store stays later (D-028). First host pick was Cloudflare Pages + Vercel; founder then chose **Vercel only**. The Aug 14 production APK (`d576dde7`) predates `/visit` + `portal/` and must not be the public file.
+
+**Decision:**
+- **Marketing site** (`site/`): Vercel project at `https://health-shield.in` (and `www`). Static only — no Supabase, OpenAI, or Mapbox keys. Android download = EAS artifact URL + SHA-256 checksum. Copy is honest sideload / unknown-sources; not Play Store; do not claim HaveIBeenPwned / leaked-password checking (D-037).
+- **Doctor portal** (`portal/`): second Vercel project at `https://portal.health-shield.in`. Same Supabase project; public env is only `NEXT_PUBLIC_SUPABASE_URL` + anon/publishable key. View-only visit packs. A quiet footer link from the marketing site is allowed so clinicians can find it; the landing page is still not a patient or doctor web app.
+- **App:** new EAS `production` Android APK with `EXPO_PUBLIC_DOCTOR_PORTAL_URL=https://portal.health-shield.in` (plaintext/sensitive, not secret). Bump `android.versionCode`. APK stays off git.
+- **DNS (GoDaddy):** keep nameservers at GoDaddy. Apex two `A` records as Vercel shows on `vercel domains verify` (currently `216.198.79.1` and `64.29.17.1`); `www` and `portal` `CNAME` to the project-specific `*.vercel-dns-017.com` targets (not a shared generic CNAME). `gddy` CLI (not the public GoDaddy MCP) is how agents write those records after `gddy auth login`.
+- **Auth:** add `https://portal.health-shield.in/**` (and local `http://localhost:3000/**`) to Supabase redirect allow-list. Never put `service_role` on Vercel.
+
+**Why (founder):** First public distribution on an owned domain; one host (Vercel) for both web apps.
+
+**Consequences:** Agents host `site/` and `portal/` on Vercel and start a **new** production APK. Do not mark D-029 PASS (leaked-password still off). Play Store, iOS, and GitHub Pages stay parked.
+
+---
+
 ## D-037 — Park leaked-password protection; waive it as a public-ship blocker
 
 **Status:** Accepted (2026-08-19) — founder: Pro HaveIBeenPwned toggle is too expensive; park until the app has revenue

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open HealthShield — reset password</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      name="description"
+      content="Opens the HealthShield app so you can choose a new password. This page does not sign you in."
+    />
+    <link rel="canonical" href="https://health-shield.in/app-reset" />
+    <meta name="theme-color" content="#1E3A8A" />
+    <link rel="icon" href="./favicon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="app-reset-body">
+    <a class="skip" href="#main">Skip to content</a>
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="brand" href="/">
+          <img src="./icon.png" width="36" height="36" alt="" />
+          HealthShield
+        </a>
+      </div>
+    </nav>
+    <main id="main" class="app-reset">
+      <div class="app-reset-card">
+        <p class="kicker">Password reset</p>
+        <h1>Open the HealthShield app</h1>
+        <p class="lede">
+          Choose a new password in the app. This page does not store your account or health data.
+        </p>
+        <p id="status" class="lede subtle">Opening HealthShield…</p>
+        <p>
+          <a class="btn" id="open" href="healthshield://reset-password">Open HealthShield</a>
+        </p>
+        <p class="lede subtle">
+          If nothing happens, install the Android app from the
+          <a href="/#download">download page</a>, then tap the button again. Expo Go is not
+          supported.
+        </p>
+      </div>
+    </main>
+    <script>
+      (function () {
+        var params = window.location.search || '';
+        var hash = window.location.hash || '';
+        var target = 'healthshield://reset-password' + params + hash;
+        var open = document.getElementById('open');
+        var status = document.getElementById('status');
+        if (open) {
+          open.setAttribute('href', target);
+        }
+        var paramsObj = new URLSearchParams(params);
+        var hashObj = new URLSearchParams(hash.charAt(0) === '#' ? hash.slice(1) : hash);
+        if (paramsObj.get('error') || hashObj.get('error')) {
+          if (status) {
+            status.textContent = 'This reset link is invalid or has expired. Request a new one in the app.';
+          }
+          return;
+        }
+        if (params || hash) {
+          window.location.replace(target);
+        } else if (status) {
+          status.textContent = 'Use the reset link from your email, or tap the button if the app is installed.';
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -392,6 +392,28 @@ h3 {
   color: var(--amber-fg);
 }
 
+.download-aside a {
+  color: inherit;
+  font-weight: 700;
+}
+
+.download-aside .btn {
+  display: inline-block;
+  margin-top: 14px;
+}
+
+.download-aside .sha {
+  margin: 12px 0 0;
+  font-size: 12px;
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.foot a {
+  color: var(--blue);
+  font-weight: 600;
+}
+
 .trust {
   background: linear-gradient(180deg, #eef2f9, #fff);
   border: 1px solid var(--line);
@@ -542,4 +564,32 @@ h3 {
   .phone {
     max-width: 300px;
   }
+}
+
+.app-reset-body {
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.app-reset {
+  width: min(520px, calc(100% - 40px));
+  margin: 48px auto 80px;
+}
+
+.app-reset-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 28px 26px;
+  box-shadow: var(--shadow);
+}
+
+.app-reset-card h1 {
+  margin: 8px 0 12px;
+  font-size: 1.7rem;
+}
+
+.app-reset-card .btn {
+  display: inline-block;
+  margin: 8px 0 16px;
 }

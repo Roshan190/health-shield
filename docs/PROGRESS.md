@@ -1,9 +1,9 @@
 # Progress
 
-**Last updated:** 2026-08-19 (D-037 — park leaked-password; waive as publish blocker)  
-**Current phase:** Phase 6 thin — Doctor visit portal (D-035 / D-027)  
-**Active slice:** 6.1 — visit consent + `portal/` view-only (design pass done; founder smoke pending)  
-**Status:** Production APK smoked, **not public yet**. Leaked-password parked (D-037). Doctor portal entered + redesigned. `ask-document` **v3 live**.
+**Last updated:** 2026-08-19 (D-040 — sideload update prompt)  
+**Current phase:** Phase 6 thin — Doctor visit portal (D-035 / D-027) + public distribution (D-038)  
+**Active slice:** D-040 in code; next production APK **1.1.1** / `versionCode` 3  
+**Status:** Founder said put it live. Domain `health-shield.in`. Site + portal **deployed on Vercel** (custom domain pending GoDaddy DNS). Leaked-password still **off** (D-037). Email password reset **in code** (D-039); founder must allow-list redirect URLs and smoke. **D-040** sideload “update available” Alert + Profile CTA **in code** (not Play, not OTA). `site/latest.json` is a **release array**; current public APK is still **1.1.0** / `versionCode` 2 until 1.1.1 is published. Play Store still parked (D-028).
 
 Agents: read this file at the start of every session. Update it when phase/slice status changes.
 
@@ -39,9 +39,9 @@ Agents: read this file at the start of every session. Update it when phase/slice
 | R Medical-record OCR | **Cancelled** (D-031) | Scrapped; policy PDF draft stays |
 | Q Document Q&A | **Done** (D-032) | One owned file; founder smoke OK |
 | 5 thin Claims assist | **Done** (D-033) | Checklist + status; founder smoke OK |
-| D Distribution prep | **Parked unpublished** (D-034 / D-035; D-037 waives HIBP) | APK built + smoked; live download not started |
+| D Distribution prep | **Public ship in progress** (D-038) | Site + portal hosts; new APK 1.1.0 |
 | Doctor portal | **Active** (D-035) | Thin visit pack: `/visit` + `portal/` |
-| Public APK + marketing site | Allowed by D-037; **not live yet** | Play Store later (D-028). Founder must still say “put the download live.” |
+| Public APK + marketing site | **D-038 in progress** | `https://health-shield.in` + `https://portal.health-shield.in`. Play Store later (D-028). |
 
 ---
 
@@ -57,13 +57,15 @@ Agents: read this file at the start of every session. Update it when phase/slice
 - [x] `eas build -p android --profile production` — **FINISHED** [d576dde7](https://expo.dev/accounts/roshan.shikhare/projects/HealthShield/builds/d576dde7-0e11-48bc-953d-0c0c136e0521) (do not commit the APK; not public)
 - [x] D3 Founder sideload smoke of production APK
 - [ ] D-029 recorded **PASS** (stays FAIL on leaked-password; D-037 waives that one check for publish)
-- [ ] Public host + download link (D-037 allows it; founder still needs to say “put it live”)
+- [x] Public host (D-038): Vercel `https://health-shield-flax.vercel.app` + `https://healthshield-portal.vercel.app`; custom domain pending DNS
+- [x] Public APK download on the site (EAS artifact + SHA-256 `26936949f7374ea60c53179fc8bdd9860781c0f16dd650e4b745d00a8d840a40`; APK not in git)
+- [x] D-040 sideload update prompt **in code** (Alert + Profile CTA; skip Expo Go). Needs APK **1.1.1** and a live `site/latest.json`
 
 ### Founder smoke checklist (D3 production APK)
 
 1. [x] Sideload production APK (unknown sources); not Expo Go
 2. [x] Core loops work (founder: everything working up to now)
-3. [ ] Public download page — **not started** (D-034)
+3. [x] Public download page — APK 1.1.0 on the marketing site (EAS artifact + SHA-256; domain health-shield.in still pending)
 
 ### D-029 gate (re-checked 2026-08-19)
 
@@ -80,7 +82,7 @@ Agents: read this file at the start of every session. Update it when phase/slice
 | Supabase security advisors | 3 WARN on `SECURITY DEFINER` RPCs (`accept_household_invite`, `delete_own_account`, `revoke_vault_membership`) — **by design**: each checks `auth.uid()` internally; that is the intended self-service pattern |
 | Auth leaked-password protection | **FAIL** (advisor 2026-08-19) — Pro-only; **parked** (D-037). Still off. Do not claim it is on. |
 | Signed **production** APK built + scanned | **PASS** (secrets) — no `service_role` / OpenAI `sk-` / Mapbox `sk.` in the APK; SHA-256 `a07e39454cfdb862d1d54753354bcee48bcd989543f4bf11abecd501b6cc4b78` |
-| **Public ship (this check)** | **Waived** by D-037. Other D-029 items still must stay PASS. Live download is a separate founder “put it live” step. |
+| **Public ship (this check)** | **Waived** by D-037. Founder put-it-live: **D-038**. Other D-029 items still must stay PASS. |
 
 `extract-record-fields` is no longer listed on the project (D-031 cleanup).
 
@@ -92,7 +94,10 @@ Agents: read this file at the start of every session. Update it when phase/slice
 - [x] 6.1 Patient `/visit` stack from Profile (not a 6th tab)
 - [x] 6.1 `portal/` Next.js view-only
 - [x] 6.2 Portal design pass (D-036): shared layout + brand mark, status badges, skeletons, empty states, a11y; record primary file now signed into Files
+- [x] D-039 Email password reset (app + portal): PKCE, HTTPS bounce, recovery gate, revoke other sessions
+- [ ] Founder: Auth redirect allow-list for D-039 (see smoke below)
 - [ ] Founder smoke: grant → doctor sees pack → revoke hides it
+- [ ] Founder smoke: password reset (D-039)
 - [ ] Phase 6 thin exit
 
 ### Founder smoke checklist (6.1)
@@ -211,7 +216,9 @@ Agents: read this file at the start of every session. Update it when phase/slice
 ## Blockers
 
 - Apple Health + SOS **iOS runtime parked** (D-014 / D-016)
-- **Public APK / website blocked** until D-029 security gate passes
+- New public APK **1.1.0** must finish before the site download button goes live (do not publish `d576dde7`)
+- GoDaddy DNS for `health-shield.in` on Vercel (apex A + `www` / `portal` CNAME)
+- Supabase Auth redirect allow-list must include `https://portal.health-shield.in/**`
 
 ---
 
@@ -224,11 +231,12 @@ Agents: read this file at the start of every session. Update it when phase/slice
 
 ## Next actions (priority order)
 
-1. Founder smoke 6.1: Profile → Doctor visit → grant pack → `cd portal && npm run dev` → sign in as that email → revoke hides it
-2. Founder smoke Q&A chat (`ask-document` **v3 live**): coverage question on an owned policy; then “how should I travel Mumbai to Pune” (with **no** prior chat) → fixed refusal, file not uploaded
-3. When you want end users to download: say “put the APK download live” (D-037 allows it). Until then `site/` stays “not live.”
-4. Rotate the OpenAI API key (it was on EAS in plaintext). Put the new value only on Edge Function secrets as `OPENAI_API_KEY`.
-5. Parked: Play Store, record OCR, email invites, cashless scrape/APIs, leaked-password (D-037 until revenue)
+1. Finish D-038 hosts: Vercel `site/` → health-shield.in and Vercel `portal/` → portal.health-shield.in + GoDaddy DNS
+2. EAS production APK **1.1.1** (`versionCode` 3) with `EXPO_PUBLIC_DOCTOR_PORTAL_URL=https://portal.health-shield.in` (includes D-039 reset + D-040 checker). After it exists, update `site/index.html` **and prepend** that release to `site/latest.json` (`version` 1.1.1 / `versionCode` 3); keep 1.1.0 in the array
+3. Founder smoke 6.1 against **production** portal: grant pack → doctor signs in → revoke hides it
+4. Founder smoke D-039 redirect allow-list + password reset (APK/dev client, not Expo Go)
+5. Rotate the OpenAI API key (it was on EAS in plaintext). Put the new value only on Edge Function secrets as `OPENAI_API_KEY`.
+6. Parked: Play Store, record OCR, email invites, cashless scrape/APIs, leaked-password (D-037 until revenue)
 
 ---
 
@@ -242,13 +250,44 @@ Agents: read this file at the start of every session. Update it when phase/slice
 - Email delivery for household invites
 - Medical-record OCR (scrapped D-031)
 - Partner/NHCX cashless verification APIs
-- Doctor portal **implementation** (thin cut **in progress** — D-035; prescription/clinic still parked)
-- Play Store as first distribution (D-028 — APK site first)
+- Doctor portal **prescription / clinic admin** (thin cut **in progress** — D-035; public host is D-038)
+- Play Store as first distribution (D-028 — APK site first; D-038 is that site)
 - Premium / enterprise / insurer claim-filing APIs
 
 ---
 
 ## Done log (recent)
+
+### 2026-08-19 (D-040 — sideload update prompt)
+
+- Recorded **D-040**. Public `site/latest.json` (JSON **array** of `version` / `versionCode` / APK URL / SHA-256 / download page). Android APK/dev-client fetches it, compares the **highest `versionCode`**, shows a dismissible **“Update available — please update”** Alert, and keeps a **Get update** CTA on Profile after Later. Opens `https://health-shield.in/#download`. Skip Expo Go / iOS / web. Not Play in-app updates, not `expo-updates` OTA, not a force-block.
+- Bumped app to **1.1.1** / Android `versionCode` 3. `latest.json` is a release array still headed by public **1.1.0** / `versionCode` 2 until the 1.1.1 APK is published — then update `index.html` and **prepend** to `latest.json`.
+- **Founder:** next production APK is 1.1.1. People on 1.1.0 will not see the in-app prompt (that binary has no checker).
+- 2026-08-19: redeployed `site/` so `https://health-shield.in/latest.json` is a live **release array** (currently one row: public 1.1.0).
+
+### 2026-08-19 (D-039 — email password reset)
+
+- Recorded **D-039**. Forgot-password on the Expo app and `portal/` via `resetPasswordForEmail` (email only; no enumeration). PKCE on the app client. Recovery session cannot open the vault or `/visits` until a new password is set. Other sessions revoked after reset. Min password 8 on the portal. App Profile can change password when signed in.
+- Static bounce `site/app-reset.html` → `healthshield://reset-password` (no keys). Portal `/auth/confirm` + `/reset-password` + `hs_pw_recovery` cookie.
+- **Founder (required):** Auth → URL configuration add `https://health-shield.in/app-reset`, `healthshield://reset-password`, `https://portal.health-shield.in/auth/confirm`, `https://portal.health-shield.in/reset-password`, `http://localhost:3000/auth/confirm`, `http://localhost:3000/reset-password`. Confirm a reset email arrives (check spam). Smoke app on **APK/dev client**, not Expo Go. Redeploy `site/` + `portal/` so production bounce/confirm exist before sending mail.
+
+#### Founder smoke checklist (D-039)
+
+1. Unknown email on app and portal → same success copy, no mail
+2. App (APK/dev client): known email → HTTPS bounce → set password → vault opens → old session on another device is dead
+3. Portal: known doctor email → set password → visits list (not the patient vault)
+4. Open recovery link then Home or `/visits` **before** setting a password → still blocked
+5. After reset, sign-in works on **both** surfaces with the new password
+6. Expired/reused link → error, no session
+
+### 2026-08-19 (D-038 — put it live)
+
+- Founder: deploy app + site + portal; domain `health-shield.in`; **both web apps on Vercel**.
+- Recorded **D-038**. Bumped app to **1.1.0** / Android `versionCode` 2. Do not publish APK `d576dde7`.
+- Site copy no longer claims leaked-password must be on. Quiet footer link to the doctor portal origin.
+- Vercel projects live: marketing [health-shield-flax.vercel.app](https://health-shield-flax.vercel.app), portal [healthshield-portal.vercel.app](https://healthshield-portal.vercel.app). Custom domains attached, waiting on GoDaddy DNS.
+- 2026-08-19: redeployed `site/` (includes `/app-reset` bounce) and `portal/` (`/forgot-password`, `/auth/confirm`, `/reset-password`) for **D-039**. Aliases: `https://health-shield.in/app-reset`, `https://portal.health-shield.in/forgot-password`.
+- Cursor MCP: official Vercel (`https://mcp.vercel.com`, OAuth) + official GoDaddy (`https://api.godaddy.com/v1/domains/mcp`, search-only). DNS writes use `gddy` CLI + skill, not the public GoDaddy MCP.
 
 ### 2026-08-19 (D-037 — park leaked-password)
 
@@ -392,12 +431,12 @@ Agents: read this file at the start of every session. Update it when phase/slice
 Continue HealthShield. Read docs/PROGRESS.md, docs/DECISIONS.md, docs/ROADMAP.md first.
 
 Context:
-- Active: Phase 6 thin doctor visit portal (D-035). Production APK smoked but **not public**. Do not publish site/ download. Do not reuse family share as doctor access.
-- Do not publish site/ or an APK until D-029 is recorded PASS.
+- Active: D-038 public ship (`health-shield.in` + `portal.health-shield.in`) and Phase 6 thin doctor visit portal (D-035).
+- Do not publish APK `d576dde7`. New 1.1.0 APK with `EXPO_PUBLIC_DOCTOR_PORTAL_URL=https://portal.health-shield.in`.
+- Do not reuse family share as doctor access. Do not put APK/keys in git.
 - Medical-record OCR is cancelled — do not rebuild without a new decision.
-- Doctor portal is architecture-only (D-027) — do not build without a new enter decision.
 - Claims copy must never say we file claims or guarantee payouts.
-- Do not scrape insurer networks or claim verified cashless.
+- Do not scrape insurer networks or claim verified cashless. Do not claim leaked-password is on (D-037).
 
-Do not start Play Store / record OCR / public APK without a new decision (and D-029 PASS or a public-ship waiver for APK/site).
+Play Store / record OCR stay parked.
 ```

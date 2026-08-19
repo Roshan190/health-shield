@@ -91,6 +91,7 @@ export function getSupabase(): SupabaseClient<Database> {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        flowType: 'pkce',
       },
     });
   }

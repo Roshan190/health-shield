@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "vercel": {
+      "url": "https://mcp.vercel.com"
+    },
+    "godaddy": {
+      "url": "https://api.godaddy.com/v1/domains/mcp"
+    }
+  }
+}
