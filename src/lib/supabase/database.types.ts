@@ -39,6 +39,10 @@ export type VaultMembershipStatus = 'active' | 'revoked';
 
 export type VaultResourceType = 'policy' | 'medical_record';
 
+export type ClaimStatus = 'draft' | 'submitted' | 'more_info' | 'settled';
+
+export type VisitConsentStatus = 'active' | 'revoked';
+
 export type Database = {
   public: {
     Tables: {
@@ -528,6 +532,166 @@ export type Database = {
         };
         Relationships: [];
       };
+      claims: {
+        Row: {
+          id: string;
+          user_id: string;
+          policy_id: string;
+          status: ClaimStatus;
+          hospital_name: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          policy_id: string;
+          status?: ClaimStatus;
+          hospital_name?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          policy_id?: string;
+          status?: ClaimStatus;
+          hospital_name?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'claims_policy_id_fkey';
+            columns: ['policy_id'];
+            isOneToOne: false;
+            referencedRelation: 'policies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      claim_checklist_items: {
+        Row: {
+          id: string;
+          claim_id: string;
+          user_id: string;
+          item_key: string;
+          label: string;
+          sort_order: number;
+          done: boolean;
+          medical_record_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          claim_id: string;
+          user_id: string;
+          item_key: string;
+          label: string;
+          sort_order?: number;
+          done?: boolean;
+          medical_record_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          claim_id?: string;
+          user_id?: string;
+          item_key?: string;
+          label?: string;
+          sort_order?: number;
+          done?: boolean;
+          medical_record_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'claim_checklist_items_claim_id_fkey';
+            columns: ['claim_id'];
+            isOneToOne: false;
+            referencedRelation: 'claims';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'claim_checklist_items_medical_record_id_fkey';
+            columns: ['medical_record_id'];
+            isOneToOne: false;
+            referencedRelation: 'medical_records';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      visit_consents: {
+        Row: {
+          id: string;
+          patient_user_id: string;
+          doctor_email: string;
+          status: VisitConsentStatus;
+          expires_at: string;
+          revoked_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          patient_user_id: string;
+          doctor_email: string;
+          status?: VisitConsentStatus;
+          expires_at: string;
+          revoked_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          patient_user_id?: string;
+          doctor_email?: string;
+          status?: VisitConsentStatus;
+          expires_at?: string;
+          revoked_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      visit_consent_items: {
+        Row: {
+          id: string;
+          consent_id: string;
+          resource_type: VaultResourceType;
+          resource_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          consent_id: string;
+          resource_type: VaultResourceType;
+          resource_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          consent_id?: string;
+          resource_type?: VaultResourceType;
+          resource_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'visit_consent_items_consent_id_fkey';
+            columns: ['consent_id'];
+            isOneToOne: false;
+            referencedRelation: 'visit_consents';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -555,6 +719,34 @@ export type Database = {
         };
         Returns: boolean;
       };
+      current_jwt_email: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      visit_consent_is_live: {
+        Args: { p_consent_id: string };
+        Returns: boolean;
+      };
+      can_doctor_view_resource: {
+        Args: {
+          p_owner: string;
+          p_resource_type: VaultResourceType;
+          p_resource_id: string;
+        };
+        Returns: boolean;
+      };
+      create_visit_consent: {
+        Args: {
+          p_doctor_email: string;
+          p_expires_at: string;
+          p_items: Json;
+        };
+        Returns: Database['public']['Tables']['visit_consents']['Row'];
+      };
+      revoke_visit_consent: {
+        Args: { p_consent_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       policy_type: PolicyType;
@@ -567,6 +759,8 @@ export type Database = {
       household_invite_status: HouseholdInviteStatus;
       vault_membership_status: VaultMembershipStatus;
       vault_resource_type: VaultResourceType;
+      claim_status: ClaimStatus;
+      visit_consent_status: VisitConsentStatus;
     };
     CompositeTypes: Record<string, never>;
   };
@@ -584,3 +778,7 @@ export type HouseholdInvite = Database['public']['Tables']['household_invites'][
 export type VaultMembership = Database['public']['Tables']['vault_memberships']['Row'];
 export type VaultItemShare = Database['public']['Tables']['vault_item_shares']['Row'];
 export type PreferredHospital = Database['public']['Tables']['preferred_hospitals']['Row'];
+export type Claim = Database['public']['Tables']['claims']['Row'];
+export type ClaimChecklistItem = Database['public']['Tables']['claim_checklist_items']['Row'];
+export type VisitConsent = Database['public']['Tables']['visit_consents']['Row'];
+export type VisitConsentItem = Database['public']['Tables']['visit_consent_items']['Row'];

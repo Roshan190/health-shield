@@ -6,6 +6,229 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 ---
 
+## D-037 — Park leaked-password protection; waive it as a public-ship blocker
+
+**Status:** Accepted (2026-08-19) — founder: Pro HaveIBeenPwned toggle is too expensive; park until the app has revenue
+
+**Context:** D-029 required Auth leaked-password protection before a **public** APK or download page. D-034 waived that only for *building* the APK. The check is still **off** (Supabase Free; Pro-only). Founder does not want to pay for Pro now.
+
+**Decision:**
+- **Park leaked-password protection.** Do not upgrade to Pro solely for HaveIBeenPwned. Revisit when there is app revenue (or the project is already on Pro for another reason).
+- **Do not mark D-029 PASS.** The toggle is still actually off; the gate table stays honest.
+- **Waive leaked-password as a *publish* blocker.** D-034's "build only" limit is lifted for this one check. Other D-029 items (no secrets in git, no keys on `site/`, JWT on Edge Functions, RLS) still must stay PASS.
+- **Does not auto-publish.** Hosting `site/` with a live APK link, Play Store, and doctor-portal production host still need an explicit "put it live" step. Agents still do not commit `.apk` / `.aab` / signing keys.
+
+**Why (founder):** Pro is a pain / cost with no revenue yet.
+
+**Consequences:** Agents may proceed with public-ship *work* (hosting, download copy) when the founder asks to put it live. Agents must not pretend leaked-password is on. Copy must not claim HaveIBeenPwned checking.
+
+---
+
+## D-036 — Portal/site design pass + document Q&A chat (grounded coverage answers)
+
+**Status:** Accepted (2026-08-19)
+
+**Context:** Phase 6 thin is active (D-035). `portal/` and `site/` shipped functional but visually bare (plain CSS, no loading/empty states, consent `status` fetched but never shown). Phase Q "Ask about this file" (D-026 / D-032, exited) refused coverage-style questions ("is food poisoning covered?") because the prompt banned all insurance interpretation, and the UI was a single question box with no conversation.
+
+**Decision:**
+- **Portal design pass (within Phase 6):** shared layout header/footer + brand mark, brand tokens (trust blue / care teal, serif display matching `site/`), status badges (Active / Expires soon / Expired / Revoked), `loading.tsx` skeletons, richer empty states, a11y basics (skip link, focus-visible). Functional fix: a record's own `document_path` is now signed into the Files list (previously only `medical_record_documents` + policy files). Still view-only; no new access paths.
+- **`site/` polish:** icon feature cards, phone-mock tab bar, trust points, CSS-only motion. Download stays **not live** (D-029 unchanged; no portal link).
+- **Document Q&A deepen (scoped enhancement, not a new phase):** chat-style card (session-only bubbles, suggestion chips, typing indicator, inline errors); `ask-document` accepts up to 12 prior turns of **session** history for follow-ups; prompt now allows explaining what *this document's wording* says about coverage / exclusions / waiting periods, citing the clause relied on, and saying plainly when the file is silent. `max_output_tokens` 500 → 700.
+- **Unchanged guardrails:** one owned file, owner-only, never diagnose, never promise claim approval/rejection/payout, off-document questions politely refused, disclaimer on every answer, **no chat persistence**, no multi-doc vault RAG, no general medical chatbot, no doctor chat.
+
+**Why (founder):** portal/site looked "basic and boring"; Q&A could not answer grounded coverage questions and should feel like a chat.
+
+**Consequences:** Redeploy `ask-document` before smoking the chat. History lives only in component state — nothing new stored server-side. Phase Q scope limits (D-026 / D-032) otherwise remain; agents still refuse a general chatbot or vault-wide Q&A without a new decision.
+
+---
+
+## D-035 — Enter thin doctor visit portal (park unpublished distribution)
+
+**Status:** Accepted (2026-08-14) — founder: production APK smoked; next = doctor portal (not public APK)
+
+**Context:** Phase D built a production APK (D-034) that the founder smoked. Public host + download stay blocked (D-029 leaked-password FAIL; D-034 is build-only). Founder chose to **park distribution unpublished** and enter the doctor portal. D-027 already locked *where* (separate web, same Supabase, time-boxed consent). This is the **enter + thin cut**. D-003 revisit: a second surface is now real.
+
+**Decision:**
+- **Park Phase D public ship.** Do not host `site/` with a live APK link. Do not mark D-029 PASS.
+- **Enter Phase 6 thin — Doctor visit portal.**
+- **Repo (D-003 revisit):** `portal/` Next.js app in this git repo. Not Expo web, not `site/`, not a sixth mobile tab, not a turbo `apps/` / `packages/` monorepo.
+- **Patient (Expo):** `/visit` stack from Profile (D-012 — not a 6th tab). Grant a time-boxed pack to a **doctor email**: owned policies + medical records the patient picks; duration 24h / 72h / 7 days (max 7 days). List + revoke. Honest copy: HealthShield does not employ or verify doctors; anyone who can sign in with that email can view the pack until expiry or revoke.
+- **Doctor (`portal/`):** same Supabase Auth email/password. View-only list of **live** consents for that email; open selected policies/records and their files. No edit, no diagnosis UI, no prescription upload.
+- **Data:** new `visit_consents` + `visit_consent_items`. Do **not** reuse household `vault_memberships` / D-018 shares (family ≠ clinician).
+- **Out of this cut:** clinic admin, doctor directory/verification, teleconsult, prescription upload, session notes, email delivery of the invite, vitals/meds/SOS/claims in the pack, sharing the whole vault, Play Store, public APK.
+
+**Why (founder):** App working through production APK; start the doctor surface next.
+
+**Consequences:** Agents build `portal/` + patient grant/revoke. Agents still refuse a public download page. Copy never implies HealthShield clinicians or diagnoses.
+
+---
+
+## D-034 — Build production APK without leaked-password (Free plan)
+
+**Status:** Accepted (2026-08-14) — founder: leaked-password needs Pro; proceed without it and start building
+
+**Context:** D-029 requires Auth leaked-password protection (HaveIBeenPwned) before a **public** APK or download page. That toggle is Pro-only. The project is on Free, so the check cannot pass. Founder does not want to wait on a paid plan to run the first signed production APK.
+
+**Decision:**
+- **Build now:** `eas build -p android --profile production` may run while leaked-password is still **FAIL**. Do not wait for Pro.
+- **Do not mark D-029 PASS.** Leaked-password remains recorded FAIL.
+- **Do not publish:** no public host, no live download link, no marketing of the APK until either (a) leaked-password is on, or (b) a later decision explicitly waives **public** ship.
+- APK stays off git. Play Store, iOS, and doctor portal stay parked.
+
+**Why (founder):** Pro is required for the Auth toggle; start the production APK anyway.
+
+**Consequences:** Agents may start the EAS production Android APK. Agents must still refuse a public `site/` download and must not record D-029 PASS. Revisit HIBP when the project is on Pro.
+
+---
+
+## D-033 — Phase 5 exit; enter distribution prep (D-029 then D-028)
+
+**Status:** Accepted (2026-08-13) — founder smoke: claims organizer works
+
+**Context:** D-026 sequence (G polish → skip record OCR → document Q&A → Phase 5 thin claims) is complete. Locked next work is marketing site + Android APK (D-028), blocked on the D-029 security gate. Doctor portal still needs its **own** enter decision (D-027) after Phase 5 — that is not this phase.
+
+**Decision:**
+- Mark Phase 5 thin claims exit met.
+- Enter **Phase D — Distribution prep**: run D-029 (secrets / RLS / git / Auth checklist); scaffold static `site/` with no keys and no APK in git. **Do not publish** a download page or APK until D-029 is recorded **PASS** in `PROGRESS.md` (including leaked-password protection).
+- Play Store, iOS, doctor portal **build**, record OCR, and insurer claim APIs stay parked.
+
+**Why (founder):** Claims tested working; proceed to the next sequenced slice.
+
+**Consequences:** Agents must refuse doctor UI (D-027). Do not commit `.apk` / `.aab` / signing keys. Marketing copy must not diagnose or claim we file insurance claims.
+
+---
+
+## D-032 — Phase Q exit; enter thin claims assist
+
+**Status:** Accepted (2026-08-13) — founder smoke: document Q&A works
+
+**Context:** D-026 / D-031 sequenced polish → (skip record OCR) → document Q&A → Phase 5 thin claims. Founder confirmed Ask-about-this-file on owned policy/record.
+
+**Decision:** Mark Phase Q exit met. Enter **Phase 5 thin — Claims assist**: manual organizer tied to an **owned** policy; India health-claim document checklist; link vault records; user-set status (`draft` / `submitted` / `more_info` / `settled`). Entry from policy detail + `/claims` stack (not a 6th tab — D-012). Honest copy: HealthShield does **not** file claims or guarantee payouts.
+
+**Out:** insurer/TPA APIs, auto-file, payout prediction, doctor portal, claim Q&A/chat.
+
+**Why (founder):** Q&A tested working; proceed to the next sequenced slice.
+
+**Consequences:** Do not start doctor portal (D-027), marketing site / public APK (D-028 / D-029), Play Store, or record OCR (D-031) during this phase.
+
+---
+
+## D-031 — Skip medical-record OCR; enter document Q&A
+
+**Status:** Accepted (2026-08-13) — founder: scrap Phase R
+
+**Context:** D-026 sequenced polish → record OCR → document Q&A → thin claims. Phase R shipped in code (extract-record-fields + Add-record draft). Founder does not want medical-record OCR.
+
+**Decision:**
+- **Remove** Phase R from the product: no Add-record field draft from files. Policy PDF draft (D-022) stays.
+- Park record OCR until a new decision. Delete the client path and repo function source; do not call `extract-record-fields`.
+- Amend D-026 order: after G, next is **Phase Q** (one-document Q&A), then Phase 5 thin claims.
+- Enter Phase Q now.
+
+**Why (founder):** Do not want medical-record OCR; proceed to the next sequenced slice.
+
+**Consequences:** Agents must not rebuild record OCR without a new decision. D-030’s “enter R” is superseded. Remote `extract-record-fields` should be deleted from the Supabase project if it is still deployed.
+
+---
+
+## D-030 — Phase G exit: polish smoked; enter record OCR
+
+**Status:** Accepted (2026-08-13) — founder confirmation
+
+**Context:** D-026 G1–G3 shipped (copy, empty/error, keyboard). Founder confirmed core loops look good (G4).
+
+**Decision:** Mark Phase G exit met. Enter **Phase R** (medical-record OCR) per D-026: Add record → attach PDF/image → draft title/category/date/tags/notes → review before save. Same `OPENAI_API_KEY` Edge secret as D-022. Never diagnose or interpret labs.
+
+**Why (founder):** Polish looks good; proceed to the next sequenced slice.
+
+**Consequences:** Do not start Phase Q (document Q&A) or thin claims until R exits. Doctor portal remains architecture-only (D-027).
+
+---
+
+## D-029 — Pre-release security gate (app + marketing site)
+
+**Status:** Accepted (2026-08-13) — founder: must pass before first public APK / website
+
+**Context:** First public distribution will be a marketing site + sideloaded Android APK (D-028), not Play Store. Health data + Edge Function secrets (OpenAI, Mapbox Search) make a leaked key a real incident. This gate is easy to skip under launch pressure — so it is a locked ship blocker.
+
+**Decision — must pass before public APK or public download page goes live:**
+
+1. **Secrets inventory.** Client / EAS public env / git may only contain: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (anon/publishable), `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (`pk.` only). Forbidden in git, Expo bundle, EAS public env, and the marketing site: `service_role`, `OPENAI_API_KEY`, Mapbox `sk.` / secret Search token, any JWT signing secret, database passwords.
+2. **Scan.** Repo + built APK + marketing site HTML/JS: no `.env` committed; `.gitignore` covers `.env`; grep for `service_role`, `sk-`, `eyJ` service JWT, `OPENAI`, Mapbox secret. Marketing site has **no** Supabase keys at all (it is static; download only).
+3. **Backend.** Supabase Auth leaked-password protection on. RLS still owner/share-scoped; Edge Functions require user JWT and never return secrets. No health PII in function logs.
+4. **APK.** Release signing key not in git; version + “sideload / unknown sources” copy honest. Prefer a checksum or EAS artifact URL over a random Drive file.
+5. **Record.** Findings go in `PROGRESS.md` (pass/fail). Fail = do not publish. Re-run this gate after any secret rotation or before a later Play Store upload.
+
+**Why:** Sideloaded APKs are easier to tamper with and inspect. A public site plus a leaked service-role key is a DPDP-class failure.
+
+**Consequences:** Agents must not treat “ship the APK” as done without this checklist. Play Store later still re-runs the gate. This is not a pentest vendor engagement — it is a secrets + RLS + client-bundle review.
+
+---
+
+## D-028 — First distribution: marketing site + Android APK (Play Store later)
+
+**Status:** Accepted (2026-08-13) — founder override of Play-first
+
+**Context:** Play Console listing costs money and process. Founder wants the app reachable for marketing now: a website where people download the Android APK. iOS remains parked (D-014 / D-016).
+
+**Decision:**
+- **Marketing site** = static landing (product story + Android download). Not an authenticated HealthShield web app. Not Expo web as the product. Not the doctor portal (D-027). Same repo may hold a simple `site/` (or equivalent) static folder — this does **not** open a monorepo (D-003).
+- **Android** = EAS production APK (or AAB→APK), signed, versioned, linked from the site. Copy must say the app is **not** on Play Store yet and installing requires allowing unknown sources.
+- **Play Store** stays parked until after marketing traction (and the D-029 gate). Play category **Health & fitness** remains a Console step when that day comes.
+- **Host** = cheap static host (e.g. GitHub Pages / Cloudflare Pages / similar). No health API on that origin.
+
+**Explicitly deferred:** iOS TestFlight, Play internal track as the *first* public channel, in-browser use of the Expo app, collecting health data on the website.
+
+**Why (founder):** Get the Android app in people’s hands without Play fees first; Play Store after marketing.
+
+**Consequences:** Sideload trust, update, and malware-perception risk is accepted for v1. Auto-update via Play will not exist until Store. Public ship is blocked on **D-029**. Do not put the APK in git. Do not use the landing page as a doctor or patient web app.
+
+---
+
+## D-027 — Doctor portal: where and how (build later)
+
+**Status:** Accepted (2026-08-13) — location/architecture locked; **do not build in this sequence**
+
+**Context:** Founder asked where the doctor portal will live. Blueprint Phase 6 (temporary access, consent, view history/reports/insurance, prescription upload) is still too early. D-003 keeps a single Expo app until a second surface is real. D-026 sequence does **not** include building the portal.
+
+**Decision — when we do build it (after Phase 5 thin claims exit + a new enter decision):**
+- **Where:** a **separate web app** (Next.js acceptable; matches blueprint frontend). Not inside the Expo mobile app, not a sixth tab, not the marketing landing (D-028).
+- **Auth / data:** same Supabase project `health-shield`. Doctors are a distinct role (not “log in as the patient”). Access only via **patient-granted, time-boxed consent** to a selected pack (records / policies the patient chooses). Default is view-only. Revoke ends access.
+- **Repo:** starting the portal is the D-003 revisit trigger (then a small monorepo or a second app + shared types is allowed). Until then, do not scaffold `apps/` / doctor routes.
+- **Copy:** assistive organizer for a visit; never diagnose; never imply the doctor is employed by HealthShield.
+
+**Explicitly out until that enter decision:** doctor signup, clinic admin, teleconsult, prescription marketplace, emergency doctor dispatch, sharing the whole vault by default.
+
+**Why:** Doctors work at a desk; patients work on a phone. Mixing both in Expo (or on a download landing page) would blur consent and delay the consumer app.
+
+**Consequences:** Agents must refuse to implement doctor UI now. Phase 5 thin claims does not include a portal. Household share (D-018) is family-only — do not reuse it as “doctor access” without this model.
+
+---
+
+## D-026 — Next sequence after Phase C (override)
+
+**Status:** Accepted (2026-08-13) — founder chose order + thin cuts
+
+**Context:** Phase N + C exited (D-024 / D-025). Parked list included polish, record OCR, PDF Q&A, Phase 5+, doctor portal. Founder wants those product slices, then thin claims, plus distribution and security decisions (D-027–D-029). Blueprint Phase 5–8 must not start as a blob.
+
+**Decision — build in this order (one active phase at a time):**
+
+1. **Phase G — General polish** (now). Copy/disclaimer audit; empty/loading/error on core flows; leftover navigation/keyboard/overflow bugs; founder smoke of auth → policy → record → SOS → hospitals. **Out:** visual redesign, new features, iOS unpark, Play Store, doctor portal.
+2. **Phase R — Medical-record OCR.** Same pattern as D-022: on Add record, attach PDF/image → Edge Function drafts title/category/date/tags/notes → user reviews before save. Never invent diagnoses or lab “interpretations.” `OPENAI_API_KEY` stays a function secret. **Out:** chat, claims, auto-save, OCR on edit/detail unless a later slice says so.
+3. **Phase Q — PDF / document Q&A.** Chat about **one** document the user owns (policy PDF or record file). Edge Function + user JWT + Storage download; answers grounded in that file; disclaimer every reply. **Never diagnose, prescribe, or promise claim outcomes.** **Out:** general medical chatbot, multi-doc vault RAG, sixth tab, doctor chat.
+4. **Phase 5 thin — Claims assist.** Manual claim organizer tied to a policy: checklist of typical India health-claim documents, link to vault items, user-set status (e.g. draft / submitted / more-info / settled). **Out:** insurer/TPA APIs, auto-file, payout prediction, doctor portal.
+
+**Still parked (not in this sequence):** doctor portal **implementation** (architecture only: D-027), Play Store (D-028), email invite delivery, scrape/partner cashless, Google Maps / `@rnmapbox/maps` native, iOS runtime.
+
+**Public APK + marketing site** (D-028) only after **D-029** security gate — typically after this sequence, not instead of it.
+
+**Why (founder):** Polish then deepen document AI, then a thin claims wedge; skip Play fees until marketing; decide doctor portal location now so we do not bolt it onto Expo.
+
+**Consequences:** Do not start R/Q/Phase 5/doctor portal/Play while G is active. Each phase still needs its own exit in `PROGRESS.md`. Product copy remains assistive, never clinical or “we filed your claim.”
+
+---
+
 ## D-025 — Hospitals hub + thin cashless deep links (override)
 
 **Status:** Accepted (2026-07-28) — founder approval after planning memo

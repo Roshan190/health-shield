@@ -99,7 +99,7 @@ export default function NewFamilyMemberScreen() {
   return (
     <Screen
       title="Add member"
-      subtitle="A household profile — not a separate login yet."
+      subtitle="A household profile on your login — not their account."
       headerRight={<IconBadge icon="person-add" tint="amber" size={44} />}>
       <Card style={styles.formCard}>
         <View style={styles.cardTitleRow}>
@@ -150,7 +150,7 @@ export default function NewFamilyMemberScreen() {
           <ThemedText type="section">Intended role</ThemedText>
         </View>
         <ThemedText type="caption" themeColor="textSecondary">
-          Intent only — not a separate login, and not shared access yet.
+          Intent only — not a separate login. Use Sharing to invite someone and share specific items.
         </ThemedText>
         <View style={styles.roleList}>
           {FAMILY_ROLES.map((item) => (

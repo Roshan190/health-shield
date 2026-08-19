@@ -13,12 +13,12 @@ export const FAMILY_ROLES: { value: FamilyRole; label: string; hint: string }[] 
   {
     value: 'viewer',
     label: 'Viewer (intent)',
-    hint: 'Saved for later. Does not grant a login or access to your policies/records today.',
+    hint: 'A label on this profile only. It does not create a login. Use Sharing to invite someone and share specific items.',
   },
   {
     value: 'manager',
     label: 'Manager (intent)',
-    hint: 'Saved for later. Does not grant a login or edit rights until invite/share ships.',
+    hint: 'A label on this profile only. It does not grant edit rights. Sharing is still invite → accept → share item-by-item.',
   },
 ];
 

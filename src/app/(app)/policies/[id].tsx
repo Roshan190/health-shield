@@ -6,11 +6,13 @@ import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { AiSummaryCard } from '@/components/ai-summary-card';
+import { DocumentQaCard } from '@/components/document-qa-card';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip, SelectChip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
 import { FamilyMemberPicker } from '@/components/family-member-picker';
+import { EmptyState } from '@/components/empty-state';
 import { IconBadge } from '@/components/icon-badge';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
@@ -392,11 +394,18 @@ export default function PolicyDetailScreen() {
   if (!policy) {
     return (
       <Screen title="Policy">
-        <Card style={styles.notFoundCard}>
-          <IconBadge icon="alert-circle" tint="red" size={46} shape="circle" />
-          <ThemedText type="smallBold">{error ?? 'Policy not found'}</ThemedText>
-        </Card>
-        <Button label="Back" variant="secondary" icon="arrow-back" onPress={() => router.back()} />
+        <EmptyState
+          icon="cloud-offline"
+          tint="red"
+          title="Couldn't open this policy"
+          message={error ?? 'Policy not found'}>
+          <Button
+            label="Back to policies"
+            variant="secondary"
+            icon="arrow-back"
+            onPress={() => router.replace('/policies')}
+          />
+        </EmptyState>
       </Screen>
     );
   }
@@ -484,6 +493,14 @@ export default function PolicyDetailScreen() {
         }}
       />
 
+      <DocumentQaCard
+        kind="policy"
+        itemId={policy.id}
+        hasDocument={Boolean(policy.document_path)}
+        isOwner={isOwner}
+        disabled={saving}
+      />
+
       <Card style={styles.formCard}>
         <View style={styles.cardTitleRow}>
           <IconBadge icon="link" tint="blue" size={34} />
@@ -524,6 +541,35 @@ export default function PolicyDetailScreen() {
           disabled={saving}
         />
       </Card>
+
+      {isOwner ? (
+        <Card style={styles.formCard}>
+          <View style={styles.cardTitleRow}>
+            <IconBadge icon="folder-open" tint="amber" size={34} />
+            <View style={styles.cashlessCopy}>
+              <ThemedText type="section">Claims organizer</ThemedText>
+              <ThemedText type="caption" themeColor="textSecondary">
+                Checklist of typical India health-claim documents. HealthShield does not file
+                claims or guarantee payouts.
+              </ThemedText>
+            </View>
+          </View>
+          <Button
+            label="Organize a claim"
+            icon="add-circle"
+            variant="secondary"
+            onPress={() => router.push(`/claims/new?policyId=${policy.id}` as Href)}
+            disabled={saving}
+          />
+          <Button
+            label="View claim checklists"
+            icon="folder-open"
+            variant="ghost"
+            onPress={() => router.push('/claims' as Href)}
+            disabled={saving}
+          />
+        </Card>
+      ) : null}
 
       {isOwner ? (
         <VaultItemShareCard
@@ -822,10 +868,5 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     flex: 1,
-  },
-  notFoundCard: {
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.four,
   },
 });

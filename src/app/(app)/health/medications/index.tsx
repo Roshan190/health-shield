@@ -72,12 +72,13 @@ export default function MedicationsListScreen() {
           <SkeletonCard />
         </View>
       ) : error ? (
-        <Card variant="muted" style={styles.noticeRow}>
-          <Ionicons name="alert-circle" size={18} color={theme.danger} />
-          <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
-            {error}
-          </ThemedText>
-        </Card>
+        <EmptyState
+          icon="cloud-offline"
+          tint="red"
+          title="Couldn't load medications"
+          message={error}>
+          <Button label="Try again" icon="refresh" onPress={load} />
+        </EmptyState>
       ) : medications.length === 0 ? (
         <EmptyState
           icon="medical"
@@ -156,13 +157,5 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.one,
     marginTop: Spacing.half,
-  },
-  noticeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  noticeText: {
-    flex: 1,
   },
 });

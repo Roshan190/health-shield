@@ -9,6 +9,7 @@ import { Card } from '@/components/card';
 import { Chip } from '@/components/chip';
 import { IconBadge } from '@/components/icon-badge';
 import { Screen } from '@/components/screen';
+import { Skeleton } from '@/components/skeleton';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -235,9 +236,7 @@ export default function FamilySharingScreen() {
       <Card style={styles.section}>
         <ThemedText type="section">Pending invites you sent</ThemedText>
         {loading ? (
-          <ThemedText type="caption" themeColor="textSecondary">
-            Loading…
-          </ThemedText>
+          <Skeleton width="70%" height={14} />
         ) : pendingOutgoing.length === 0 ? (
           <ThemedText type="small" themeColor="textSecondary">
             None pending.
@@ -312,6 +311,14 @@ export default function FamilySharingScreen() {
           <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
             {error}
           </ThemedText>
+          <Button
+            label="Retry"
+            icon="refresh"
+            size="sm"
+            variant="secondary"
+            onPress={() => void load()}
+            disabled={busy}
+          />
         </Card>
       ) : null}
       {status ? (

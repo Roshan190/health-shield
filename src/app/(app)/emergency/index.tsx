@@ -187,7 +187,7 @@ export default function EmergencyHubScreen() {
               <View style={styles.flex}>
                 <ThemedText type="smallBold">Hospitals</ThemedText>
                 <ThemedText type="caption" themeColor="textSecondary">
-                  Nearby map, preferred list, and insurer cashless tools.
+                  Nearby map, your preferred list, and official insurer cashless sites.
                 </ThemedText>
               </View>
               <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />

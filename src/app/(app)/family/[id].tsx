@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { Card, PressableCard } from '@/components/card';
 import { Chip, SelectChip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
+import { EmptyState } from '@/components/empty-state';
 import { IconBadge } from '@/components/icon-badge';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
@@ -212,13 +213,17 @@ export default function FamilyMemberDetailScreen() {
   if (!member) {
     return (
       <Screen title="Member" subtitle="Not found">
-        <Card variant="muted" style={styles.noticeRow}>
-          <Ionicons name="alert-circle" size={18} color={theme.danger} />
-          <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
-            {error ?? 'Member not found'}
-          </ThemedText>
-        </Card>
-        <Button label="Back to family" variant="secondary" onPress={() => router.replace('/family')} />
+        <EmptyState
+          icon="cloud-offline"
+          tint="red"
+          title="Couldn't open this member"
+          message={error ?? 'Member not found'}>
+          <Button
+            label="Back to family"
+            variant="secondary"
+            onPress={() => router.replace('/family')}
+          />
+        </EmptyState>
       </Screen>
     );
   }
@@ -241,7 +246,7 @@ export default function FamilyMemberDetailScreen() {
         />
         <ThemedText type="caption" themeColor="textSecondary">
           This is a profile on your account — not a separate login. Roles do not grant access.
-          Policies and records stay private to you (D-008).
+          To let someone view items on their own login, use Family → Sharing.
         </ThemedText>
       </Card>
 
@@ -376,7 +381,7 @@ export default function FamilyMemberDetailScreen() {
           <ThemedText type="section">Intended role</ThemedText>
         </View>
         <ThemedText type="caption" themeColor="textSecondary">
-          Intent only — not a separate login, and not shared access yet.
+          Intent only — not a separate login. Sharing is invite + explicit item share.
         </ThemedText>
         <View style={styles.chips}>
           {FAMILY_ROLES.map((item) => (

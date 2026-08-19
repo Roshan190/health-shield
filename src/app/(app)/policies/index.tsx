@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -88,14 +88,22 @@ export default function PoliciesListScreen() {
       title="Policies"
       subtitle="Your household's insurance portfolio."
       headerRight={
-        !loading && policies.length > 0 ? (
+        <View style={styles.headerActions}>
           <Button
-            label="Add"
-            icon="add"
+            label="Claims"
+            variant="ghost"
             size="sm"
-            onPress={() => router.push('/policies/new')}
+            onPress={() => router.push('/claims' as Href)}
           />
-        ) : undefined
+          {!loading && policies.length > 0 ? (
+            <Button
+              label="Add"
+              icon="add"
+              size="sm"
+              onPress={() => router.push('/policies/new')}
+            />
+          ) : null}
+        </View>
       }>
       {loading ? (
         <View style={styles.list}>
@@ -257,6 +265,11 @@ const styles = StyleSheet.create({
   insurer: {
     flex: 1,
     fontSize: 15,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
   },
   policyBottomRow: {
     flexDirection: 'row',

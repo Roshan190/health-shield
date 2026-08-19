@@ -34,6 +34,10 @@ yarn-error.*
 .env
 .env*.local
 
+# Release artifacts (D-028 / D-029 — never commit APKs or signing keys)
+*.apk
+*.aab
+
 # Local personal docs / sample PDFs (may contain real PII — never commit)
 /pdf/
 
@@ -48,3 +52,6 @@ example
 
 # IDEs
 .idea/
+
+# Next.js doctor portal
+.next/

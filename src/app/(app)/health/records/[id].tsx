@@ -5,11 +5,13 @@ import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 
 import { AiSummaryCard } from '@/components/ai-summary-card';
+import { DocumentQaCard } from '@/components/document-qa-card';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip, SelectChip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
 import { FamilyMemberPicker } from '@/components/family-member-picker';
+import { EmptyState } from '@/components/empty-state';
 import { IconBadge } from '@/components/icon-badge';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
@@ -388,11 +390,17 @@ export default function RecordDetailScreen() {
   if (!record) {
     return (
       <Screen title="Record">
-        <Card style={styles.notFoundCard}>
-          <IconBadge icon="alert-circle" tint="red" size={46} shape="circle" />
-          <ThemedText type="smallBold">{error ?? 'Record not found'}</ThemedText>
-        </Card>
-        <Button label="Back" variant="secondary" icon="arrow-back" onPress={() => router.back()} />
+        <EmptyState
+          icon="cloud-offline"
+          tint="red"
+          title="Couldn't open this record"
+          message={error ?? 'Record not found'}>
+          <Button
+            label="Back to records"
+            variant="secondary"
+            onPress={() => router.replace('/health/records')}
+          />
+        </EmptyState>
       </Screen>
     );
   }
@@ -428,6 +436,14 @@ export default function RecordDetailScreen() {
         onSummarize={() => {
           void onSummarize();
         }}
+      />
+
+      <DocumentQaCard
+        kind="record"
+        itemId={record.id}
+        hasDocument={Boolean(record.document_path) || documents.length > 0}
+        isOwner={isOwner}
+        disabled={saving}
       />
 
       {isOwner ? (
@@ -666,10 +682,5 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     flex: 1,
-  },
-  notFoundCard: {
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.four,
   },
 });

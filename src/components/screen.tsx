@@ -40,7 +40,7 @@ export function Screen({
               </ThemedText>
             ) : null}
           </View>
-          {headerRight}
+          {headerRight ? <View style={styles.headerRight}>{headerRight}</View> : null}
         </View>
       ) : null}
       {children}
@@ -55,6 +55,7 @@ export function Screen({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets
             scrollEnabled={scrollEnabled}
             nestedScrollEnabled>
             {body}
@@ -89,13 +90,18 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: Spacing.three,
+    gap: Spacing.two,
     marginBottom: Spacing.one,
   },
   header: {
     flex: 1,
+    minWidth: 0,
     gap: Spacing.one,
+  },
+  headerRight: {
+    flexShrink: 0,
+    alignItems: 'flex-end',
   },
 });

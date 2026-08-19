@@ -27,6 +27,8 @@ export default function AppTabs() {
       {/* Reachable from Home — not bottom tabs (D-012 / D-025). */}
       <Tabs.Screen name="emergency" options={{ href: null }} />
       <Tabs.Screen name="hospitals" options={{ href: null }} />
+      <Tabs.Screen name="claims" options={{ href: null }} />
+      <Tabs.Screen name="visit" options={{ href: null }} />
     </Tabs>
   );
 }

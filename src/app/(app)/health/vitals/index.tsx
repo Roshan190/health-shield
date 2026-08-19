@@ -123,12 +123,9 @@ export default function VitalsListScreen() {
           <SkeletonCard />
         </View>
       ) : error ? (
-        <Card variant="muted" style={styles.noticeRow}>
-          <Ionicons name="alert-circle" size={18} color={theme.danger} />
-          <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
-            {error}
-          </ThemedText>
-        </Card>
+        <EmptyState icon="cloud-offline" tint="red" title="Couldn't load vitals" message={error}>
+          <Button label="Try again" icon="refresh" onPress={load} />
+        </EmptyState>
       ) : vitals.length === 0 ? (
         <EmptyState
           icon="heart"
@@ -275,13 +272,5 @@ const styles = StyleSheet.create({
   vitalBody: {
     flex: 1,
     gap: Spacing.half,
-  },
-  noticeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  noticeText: {
-    flex: 1,
   },
 });

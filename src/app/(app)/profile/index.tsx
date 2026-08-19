@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
@@ -302,6 +302,23 @@ export default function ProfileScreen() {
         </Card>
       ) : (
         <>
+          {error ? (
+            <Card variant="muted" style={styles.noticeRow}>
+              <Ionicons name="alert-circle" size={18} color={theme.danger} />
+              <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
+                {error}
+              </ThemedText>
+              <Button
+                label="Retry"
+                icon="refresh"
+                size="sm"
+                variant="secondary"
+                onPress={() => void loadProfile()}
+                disabled={saving || busyAccount}
+              />
+            </Card>
+          ) : null}
+
           <Card style={styles.formCard}>
             <View style={styles.cardTitleRow}>
               <IconBadge icon="medkit" tint="red" size={34} />
@@ -315,6 +332,23 @@ export default function ProfileScreen() {
               icon="medkit"
               variant="secondary"
               onPress={() => router.push('/emergency')}
+            />
+          </Card>
+
+          <Card style={styles.formCard}>
+            <View style={styles.cardTitleRow}>
+              <IconBadge icon="medkit" tint="teal" size={34} />
+              <ThemedText type="section">Doctor visit</ThemedText>
+            </View>
+            <ThemedText type="caption" themeColor="textSecondary">
+              Time-boxed pack of policies and records for a clinic visit. Not family sharing. We do
+              not employ or verify doctors.
+            </ThemedText>
+            <Button
+              label="Manage visit packs"
+              icon="medkit"
+              variant="secondary"
+              onPress={() => router.push('/visit' as Href)}
             />
           </Card>
 
@@ -421,14 +455,6 @@ export default function ProfileScreen() {
             />
           </Card>
 
-          {error ? (
-            <Card variant="muted" style={styles.noticeRow}>
-              <Ionicons name="alert-circle" size={18} color={theme.danger} />
-              <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
-                {error}
-              </ThemedText>
-            </Card>
-          ) : null}
           {status ? (
             <Card variant="muted" style={styles.noticeRow}>
               <Ionicons name="checkmark-circle" size={18} color={theme.success} />

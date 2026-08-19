@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { Chip } from '@/components/chip';
 import { DateField } from '@/components/date-field';
+import { EmptyState } from '@/components/empty-state';
 import { IconBadge } from '@/components/icon-badge';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
@@ -225,17 +226,17 @@ export default function MedicationDetailScreen() {
   if (!medication) {
     return (
       <Screen title="Medication" subtitle="Not found">
-        <Card variant="muted" style={styles.noticeRow}>
-          <Ionicons name="alert-circle" size={18} color={theme.danger} />
-          <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
-            {error ?? 'Medication not found'}
-          </ThemedText>
-        </Card>
-        <Button
-          label="Back to medications"
-          variant="secondary"
-          onPress={() => router.replace('/health/medications')}
-        />
+        <EmptyState
+          icon="cloud-offline"
+          tint="red"
+          title="Couldn't open this medication"
+          message={error ?? 'Medication not found'}>
+          <Button
+            label="Back to medications"
+            variant="secondary"
+            onPress={() => router.replace('/health/medications')}
+          />
+        </EmptyState>
       </Screen>
     );
   }

@@ -1,0 +1,2 @@
+-- Applied remotely as fix_create_visit_consent_jwt_email (same body as create_visit_consents after JWT-email fix).
+-- Kept so CLI history matches the dashboard.

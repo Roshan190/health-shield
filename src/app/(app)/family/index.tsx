@@ -105,12 +105,9 @@ export default function FamilyListScreen() {
           <SkeletonCard />
         </View>
       ) : error ? (
-        <Card variant="muted" style={styles.noticeRow}>
-          <Ionicons name="alert-circle" size={18} color={theme.danger} />
-          <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
-            {error}
-          </ThemedText>
-        </Card>
+        <EmptyState icon="cloud-offline" tint="red" title="Couldn't load family" message={error}>
+          <Button label="Try again" icon="refresh" onPress={load} />
+        </EmptyState>
       ) : members.length === 0 ? (
         <EmptyState
           icon="people"
@@ -192,7 +189,9 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: Spacing.two,
   },
   defaultsCard: {
@@ -218,13 +217,5 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.one,
     marginTop: Spacing.half,
-  },
-  noticeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  noticeText: {
-    flex: 1,
   },
 });

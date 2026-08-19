@@ -18,8 +18,8 @@ type FamilyMemberPickerProps = {
 };
 
 /**
- * Optional household-member link (owner-managed profiles only — D-008).
- * Not invite/shared login access.
+ * Optional household-member link (organize-only profiles on this login).
+ * Real sharing with another login is Family → Sharing (D-018).
  */
 export function FamilyMemberPicker({
   members,
@@ -29,7 +29,7 @@ export function FamilyMemberPicker({
   hideWhenEmpty = false,
   label = 'Family member',
   hint = 'Optional. Helps you find this person’s documents later.',
-  emptyHint = 'Add someone under Family to tag items for them. Profiles stay on your account — they do not get a separate login yet.',
+  emptyHint = 'Add someone under Family to tag items for them. Profiles stay on your account — a separate login needs Sharing.',
 }: FamilyMemberPickerProps) {
   if (members.length === 0) {
     if (hideWhenEmpty) {

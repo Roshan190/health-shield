@@ -1,9 +1,9 @@
 # Progress
 
-**Last updated:** 2026-07-28 (D-025 / Hospitals hub + cashless deep links)  
-**Current phase:** Phase C — Hospitals hub + thin cashless assist (D-025)  
-**Active slice:** C1–C4 shipped in code; smoke pending  
-**Status:** `/hospitals` hub (Nearby | Preferred | Cashless); Home CTA; official insurer deep links only
+**Last updated:** 2026-08-19 (D-037 — park leaked-password; waive as publish blocker)  
+**Current phase:** Phase 6 thin — Doctor visit portal (D-035 / D-027)  
+**Active slice:** 6.1 — visit consent + `portal/` view-only (design pass done; founder smoke pending)  
+**Status:** Production APK smoked, **not public yet**. Leaked-password parked (D-037). Doctor portal entered + redesigned. `ask-document` **v3 live**.
 
 Agents: read this file at the start of every session. Update it when phase/slice status changes.
 
@@ -33,8 +33,94 @@ Agents: read this file at the start of every session. Update it when phase/slice
 | 4 Thin AI summaries | **Done** (D-019 / D-020) | Metadata summarize; no PDF/OCR |
 | Household invite/share | **Done** (D-018 / D-021) | Invite → accept → share → revoke smoked |
 | P Policy PDF draft | **Done** (D-022 / D-023) | Draft from PDF + PDF-first Add policy |
-| N Nearby hospitals | **In progress** (D-024) | Mapbox + preferred; smoke still pending |
-| C Hospitals hub + cashless | **In progress** (D-025) | Hub + deep links shipped; smoke pending |
+| N Nearby hospitals | **Done** (D-024) | Mapbox nearby + preferred + search; founder smoke OK |
+| C Hospitals hub + cashless | **Done** (D-025) | Hub + insurer deep links; founder smoke OK |
+| G General polish | **Done** (D-030) | Copy, empty/error, keyboard; founder smoke OK |
+| R Medical-record OCR | **Cancelled** (D-031) | Scrapped; policy PDF draft stays |
+| Q Document Q&A | **Done** (D-032) | One owned file; founder smoke OK |
+| 5 thin Claims assist | **Done** (D-033) | Checklist + status; founder smoke OK |
+| D Distribution prep | **Parked unpublished** (D-034 / D-035; D-037 waives HIBP) | APK built + smoked; live download not started |
+| Doctor portal | **Active** (D-035) | Thin visit pack: `/visit` + `portal/` |
+| Public APK + marketing site | Allowed by D-037; **not live yet** | Play Store later (D-028). Founder must still say “put the download live.” |
+
+---
+
+## Phase D — Distribution prep (D-033 / D-028 / D-029)
+
+- [x] D1 Repo secrets scan (see gate table below)
+- [x] D1 Static `site/` landing (no keys; download not live)
+- [x] D2 `eas.json` production/preview APK profiles + `environment` (EAS env, not git keys)
+- [x] Founder: set `EXPO_PUBLIC_*` on EAS (`production`, plaintext/sensitive — not secret)
+- [x] 2026-08-14: removed stray `OPEN_AI_API_KEY` from EAS (was on production/preview/development). OpenAI stays on Edge Functions only. **Rotate that OpenAI key** (it was listable as plaintext).
+- [x] D-034: do **not** wait on leaked-password (Pro) to **start** the production APK build
+- [ ] Founder: Supabase Auth **leaked password protection** — **parked** (D-037; Pro; revisit with revenue). Still actually **off**.
+- [x] `eas build -p android --profile production` — **FINISHED** [d576dde7](https://expo.dev/accounts/roshan.shikhare/projects/HealthShield/builds/d576dde7-0e11-48bc-953d-0c0c136e0521) (do not commit the APK; not public)
+- [x] D3 Founder sideload smoke of production APK
+- [ ] D-029 recorded **PASS** (stays FAIL on leaked-password; D-037 waives that one check for publish)
+- [ ] Public host + download link (D-037 allows it; founder still needs to say “put it live”)
+
+### Founder smoke checklist (D3 production APK)
+
+1. [x] Sideload production APK (unknown sources); not Expo Go
+2. [x] Core loops work (founder: everything working up to now)
+3. [ ] Public download page — **not started** (D-034)
+
+### D-029 gate (re-checked 2026-08-19)
+
+| Check | Result |
+|-------|--------|
+| Client env names only `EXPO_PUBLIC_SUPABASE_*` + `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (`pk.`) (+ `EXPO_PUBLIC_DOCTOR_PORTAL_URL`, a URL not a secret — D-035) | **PASS** |
+| `.env` / `portal/.env.local` gitignored and not tracked; no `.apk` / `.aab` in git | **PASS** |
+| No `service_role`, live `sk-` keys, or `eyJ` JWTs in tracked source | **PASS** (only a "never service_role" comment in `portal/.env.example`) |
+| `site/` has no Supabase / OpenAI / Mapbox keys | **PASS** (README mentions env *names* only) |
+| `portal/` public env is only `NEXT_PUBLIC_SUPABASE_URL` + anon key | **PASS** |
+| EAS env (production/preview/development) has only the three `EXPO_PUBLIC_*` names — no OpenAI / Mapbox `sk.` | **PASS** (after deleting stray `OPEN_AI_API_KEY`) |
+| Edge Functions (`summarize-item`, `extract-policy-fields`, `ask-document` v3, `nearby-hospitals`) `verify_jwt: true`; use user JWT + anon key | **PASS** (verified live 2026-08-19) |
+| Claims + other public tables RLS enabled (owner-scoped) | **PASS** (security advisors show no RLS findings) |
+| Supabase security advisors | 3 WARN on `SECURITY DEFINER` RPCs (`accept_household_invite`, `delete_own_account`, `revoke_vault_membership`) — **by design**: each checks `auth.uid()` internally; that is the intended self-service pattern |
+| Auth leaked-password protection | **FAIL** (advisor 2026-08-19) — Pro-only; **parked** (D-037). Still off. Do not claim it is on. |
+| Signed **production** APK built + scanned | **PASS** (secrets) — no `service_role` / OpenAI `sk-` / Mapbox `sk.` in the APK; SHA-256 `a07e39454cfdb862d1d54753354bcee48bcd989543f4bf11abecd501b6cc4b78` |
+| **Public ship (this check)** | **Waived** by D-037. Other D-029 items still must stay PASS. Live download is a separate founder “put it live” step. |
+
+`extract-record-fields` is no longer listed on the project (D-031 cleanup).
+
+---
+
+## Phase 6 thin — Doctor visit portal (D-035)
+
+- [x] 6.1 Schema: `visit_consents` + `visit_consent_items` (patient owner; doctor live-email read)
+- [x] 6.1 Patient `/visit` stack from Profile (not a 6th tab)
+- [x] 6.1 `portal/` Next.js view-only
+- [x] 6.2 Portal design pass (D-036): shared layout + brand mark, status badges, skeletons, empty states, a11y; record primary file now signed into Files
+- [ ] Founder smoke: grant → doctor sees pack → revoke hides it
+- [ ] Phase 6 thin exit
+
+### Founder smoke checklist (6.1)
+
+1. Profile → Doctor visit → grant a pack (email + duration + at least one owned policy/record)
+2. Sign in on `portal/` with **that** email; see only the pack (not the rest of the vault)
+3. Open a file; copy does not diagnose or say HealthShield employs the doctor
+4. Revoke (or wait for expiry) → doctor can no longer open the pack
+5. Household Sharing is unchanged and is not used as doctor access
+
+---
+
+## Phase 5 thin — Claims assist (D-032) — done (D-033)
+
+- [x] 5.1 Schema: `claims` + `claim_checklist_items` (owner RLS; claim tied to owned policy)
+- [x] 5.1 `/claims` stack (not a 6th tab): list, new, detail
+- [x] 5.1 Link vault records; user-set status; honest “we do not file” copy
+- [x] 5.1 Entry: policy detail, Policies header, Home row under quick actions
+- [x] Founder Android smoke
+- [x] Phase 5 exit
+
+### Founder smoke checklist (Phase 5)
+
+1. Home → **Claims organizer** (or Policies → Claims) opens `/claims`
+2. Start a checklist on a policy you **own**; shared policies are not offered
+3. Tick items, **Link from vault**, set status Draft → Submitted (etc.)
+4. Copy never says HealthShield files claims or guarantees payouts
+5. Delete checklist; policy/records remain
 
 ---
 
@@ -44,8 +130,8 @@ Agents: read this file at the start of every session. Update it when phase/slice
 - [x] C2 Cashless segment + Policy detail deep links (system browser)
 - [x] C3 `/hospitals` hub + Home “Hospitals” CTA; Emergency link retained; no 6th tab
 - [x] C4 Map-first segments Nearby | Preferred | Cashless (no cashless Mapbox pins)
-- [ ] Founder Android smoke (hub + deep link open)
-- [ ] Phase C exit
+- [x] Founder Android smoke (hub + deep link open)
+- [x] Phase C exit
 
 ### Founder smoke checklist (C)
 
@@ -63,10 +149,10 @@ Agents: read this file at the start of every session. Update it when phase/slice
 - [x] N2 Preferred mark/unsave (`preferred_hospitals`)
 - [x] Map via Mapbox GL JS WebView (now on `/hospitals`)
 - [x] Google Places + Google Maps SDK + OSM Overpass + `@rnmapbox/maps` parked
-- [ ] Founder sets `MAPBOX_ACCESS_TOKEN` Edge secret (list)
-- [ ] Founder sets `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (pk.) + restart Expo
-- [ ] Android smoke
-- [ ] Phase N exit
+- [x] Founder sets `MAPBOX_ACCESS_TOKEN` Edge secret (list)
+- [x] Founder sets `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (pk.) + restart Expo
+- [x] Android smoke
+- [x] Phase N exit
 
 ### Founder smoke checklist (N)
 
@@ -79,25 +165,70 @@ Agents: read this file at the start of every session. Update it when phase/slice
 
 ---
 
+## Phase G — General polish (D-026)
+
+- [x] G1 Copy / disclaimer audit (AI, cashless, SOS)
+- [x] G2 Empty / loading / error on core flows
+- [x] G3 Leftover navigation / keyboard / overflow bugs
+- [x] G4 Founder Android smoke (auth → policy → record → SOS → hospitals)
+- [x] Phase G exit (then enter R — do not start OCR during G)
+
+### Founder smoke checklist (G)
+
+1. Sign-in persists; empty states are honest
+2. Add policy + Add record still work
+3. SOS confirm / cancel copy does not claim we call emergency services
+4. Hospitals hub: Nearby / Preferred / Cashless still honest
+5. No diagnosis language in AI summarize copy
+
+---
+
+## Phase R — Medical-record OCR — cancelled (D-031)
+
+- [x] Scrapped: Add-record OCR UI + `extract-record-fields` source removed
+- [ ] Founder: delete remote Edge Function `extract-record-fields` in Supabase dashboard if it is still listed
+
+---
+
+## Phase Q — Document Q&A (D-031) — done (D-032)
+
+- [x] Q1 Edge Function `ask-document` (JWT + Storage + OpenAI; owner-only)
+- [x] Q1 Ask card on policy detail and record detail (not a new tab)
+- [x] Deploy `ask-document`
+- [x] Founder Android smoke
+- [x] Phase Q exit (then enter Phase 5 thin claims)
+
+### Founder smoke checklist (Q)
+
+1. Open a **policy you own** with a PDF → **Ask about this file** (e.g. sum insured)
+2. Answer is from that PDF; disclaimer is not medical/insurance advice
+3. Open a **record you own** with a PDF/JPEG/PNG/WebP → ask a factual question
+4. No file attached → honest “attach first”; shared/viewer login cannot ask
+5. Copy never diagnoses or promises a claim payout
+
+---
+
 ## Blockers
 
 - Apple Health + SOS **iOS runtime parked** (D-014 / D-016)
-- Nearby hospitals Search: `MAPBOX_ACCESS_TOKEN` on Edge Functions
-- In-app map tiles: `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (pk.) — WebView Mapbox GL (Expo Go OK)
+- **Public APK / website blocked** until D-029 security gate passes
 
 ---
 
 ## Founder Console checklist (parked / when ready)
 
-1. [ ] Google Play Console → Store listing → category **Health & fitness**
-2. [ ] Supabase Auth → Email → **leaked password protection**
+1. [ ] Google Play Console → Store listing → category **Health & fitness** (after D-028 Play later)
+2. [ ] Supabase Auth → Email → **leaked password protection** — **parked** (D-037; Pro; revisit with revenue)
 
 ---
 
 ## Next actions (priority order)
 
-1. Founder: Mapbox secrets → restart Expo → smoke Phase N + Phase C (Home → Hospitals)
-2. Parked later: scrape/partner cashless APIs · `@rnmapbox/maps` native · Google · email invites · record OCR · PDF Q&A · polish · Phase 5+
+1. Founder smoke 6.1: Profile → Doctor visit → grant pack → `cd portal && npm run dev` → sign in as that email → revoke hides it
+2. Founder smoke Q&A chat (`ask-document` **v3 live**): coverage question on an owned policy; then “how should I travel Mumbai to Pune” (with **no** prior chat) → fixed refusal, file not uploaded
+3. When you want end users to download: say “put the APK download live” (D-037 allows it). Until then `site/` stays “not live.”
+4. Rotate the OpenAI API key (it was on EAS in plaintext). Put the new value only on Edge Function secrets as `OPENAI_API_KEY`.
+5. Parked: Play Store, record OCR, email invites, cashless scrape/APIs, leaked-password (D-037 until revenue)
 
 ---
 
@@ -109,15 +240,109 @@ Agents: read this file at the start of every session. Update it when phase/slice
 - Google Places for nearby hospitals
 - Scraping / in-app cashless hospital result lists (beyond D-025 deep links)
 - Email delivery for household invites
-- Medical-record OCR
-- PDF Q&A / chat about documents
+- Medical-record OCR (scrapped D-031)
 - Partner/NHCX cashless verification APIs
-- General polish pass
-- Phase 5+ claims / doctor portal
+- Doctor portal **implementation** (thin cut **in progress** — D-035; prescription/clinic still parked)
+- Play Store as first distribution (D-028 — APK site first)
+- Premium / enterprise / insurer claim-filing APIs
 
 ---
 
 ## Done log (recent)
+
+### 2026-08-19 (D-037 — park leaked-password)
+
+- Founder: do not pay for Pro HaveIBeenPwned now; revisit with revenue.
+- Recorded **D-037**: leaked-password stays **off** (D-029 not marked PASS). That one check is waived as a *publish* blocker. Live APK download still needs an explicit “put it live.”
+
+### 2026-08-19 (Q&A cost gate + ask-document v3 deploy + D-029 re-check)
+
+- Added a cheap relevance gate to `ask-document`: off-topic questions (travel, weather, chit-chat) are classified **without the file** (~a few hundred tokens) and get a fixed refusal — the storage download + OpenAI file upload + full model run only happen for plausibly on-document questions. Gate fails open so it never blocks a real question.
+- Deployed `ask-document` **v3** (chat history + coverage prompt + gate) with `verify_jwt: true`.
+- Re-ran the D-029 gate (table above): repo/secrets/RLS/edge-JWT all PASS; 3 advisor WARNs on `SECURITY DEFINER` RPCs are by design (each checks `auth.uid()`); leaked-password protection still **FAIL** (Pro-only). Public ship remains blocked pending founder decision (Pro toggle or explicit waiver).
+
+### 2026-08-19 (D-036 — portal/site design pass + document Q&A chat)
+
+- Portal redesigned: shared header/footer layout with brand mark, brand tokens + serif display, status badges (Active / Expires soon / Expired / Revoked), loading skeletons, grouped policy/record sections with icons, richer empty states, skip link + focus-visible. Fix: a record's own `document_path` is now signed into the Files list.
+- `site/` polish: icon feature cards, phone-mock tab bar with real tab names, trust points, CSS-only motion (reduced-motion safe). Download still not live (D-029 unchanged).
+- Document Q&A → chat: bubbles, suggestion chips, typing indicator, inline errors; session-only history (up to 12 messages) sent to `ask-document`; prompt now explains what the document's wording says about coverage/exclusions/waiting periods with clause citations, refuses off-document questions. **Deploy `ask-document` before smoking.**
+
+### 2026-08-14 (D-035 — enter thin doctor visit portal)
+
+- Founder: production APK working; chose doctor portal over public download.
+- Recorded **D-035**: park unpublished distribution; enter `/visit` + `portal/` Next.js; do not reuse household shares for clinicians.
+- Shipped slice 6.1 in code: visit consent schema/RLS, patient grant/revoke, doctor portal view-only. Founder smoke still required.
+
+### 2026-08-14 (D3 — production APK founder smoke; no next phase)
+
+- Founder: production APK / app working; asked to move to the next phase.
+- Refused a new product phase: Phase D is not exited. D-034 still forbids public host + download. Doctor portal still needs its own enter decision (D-027). Play Store still later (D-028).
+
+### 2026-08-14 (D-034 — production APK build without leaked-password)
+
+- Founder: leaked-password needs Pro; proceed without it and start building.
+- Recorded **D-034**: production `eas build` may run while HIBP is FAIL. D-029 stays FAIL. No public download.
+- Production Android APK **FINISHED** ([d576dde7](https://expo.dev/accounts/roshan.shikhare/projects/HealthShield/builds/d576dde7-0e11-48bc-953d-0c0c136e0521)). APK secret scan **PASS**. SHA-256 `a07e39454cfdb862d1d54753354bcee48bcd989543f4bf11abecd501b6cc4b78`. Artifact not in git.
+
+### 2026-08-14 (Phase D — stay in distribution; D-029 still FAIL)
+
+- Founder asked to start the next phase. Refused: D-026/D-033 sequence is still **Phase D**. Doctor portal / Play Store / public APK stay parked.
+- EAS already had the three `EXPO_PUBLIC_*` vars. Deleted stray `OPEN_AI_API_KEY` from EAS (all environments). Founder must rotate that OpenAI key and keep it on Edge Functions only.
+- Leaked-password protection still **FAIL** (Supabase security advisor). No production APK yet.
+
+### 2026-08-13 (Phase D2 — EAS APK profile)
+
+- Site UI smoked. Next slice in Phase D: production/preview APK profiles with EAS `environment` (no keys in git).
+- Founder still sets EAS `EXPO_PUBLIC_*` + leaked-password + `eas build`. Do not publish until D-029 PASS.
+- Doctor portal still architecture-only (D-027).
+
+### 2026-08-13 (D-033 — Phase 5 exit; Phase D distribution)
+
+- Founder smoke: claims organizer working. Phase 5 closed.
+- Entered distribution prep: D-029 repo scan PASS; leaked-password **FAIL**; static `site/` with no keys and no live download. Do not publish until gate PASS.
+- Doctor portal still architecture-only (D-027).
+
+### 2026-08-13 (D-032 — Phase Q exit; Phase 5 thin claims)
+
+- Founder smoke: document Q&A working. Phase Q closed.
+- Thin claims organizer: `claims` + checklist items (owner RLS); `/claims` stack; link vault records; statuses draft / submitted / more_info / settled.
+- Copy: HealthShield does not file claims or guarantee payouts. No 6th tab (D-012).
+
+### 2026-08-13 (D-031 — skip record OCR; Phase Q)
+
+- Founder does not want medical-record OCR. Removed Add-record draft UI and `extract-record-fields` source.
+- Policy PDF draft (D-022) unchanged.
+- Phase Q: **Ask about this file** on policy and record detail; Edge Function `ask-document`; owner-only; never diagnoses.
+
+### 2026-08-13 (Phase R — record OCR shipped, then cancelled)
+
+- Briefly shipped then removed the same day (D-031).
+
+### 2026-08-13 (Phase G — G1–G3 polish in code)
+
+- Family copy: roles are labels only; Sharing is invite → accept → share item (D-018 is live, D-008 “not yet” language removed).
+- Home trust copy: data is private unless you explicitly share.
+- Empty/error: list load failures and missing detail screens use EmptyState + retry/back.
+- Keyboard: Screen scrolls with `automaticallyAdjustKeyboardInsets`; Android `softwareKeyboardLayoutMode: resize`.
+- Hospitals cashless empty state + error shown near the hub segments.
+- **G4 founder smoke still required** before Phase G exit / record OCR.
+
+### 2026-08-13 (D-026–D-029 — sequence + distribution + security)
+
+- Locked next build order: G polish → record OCR → document Q&A → thin claims.
+- Doctor portal: separate web app later, same Supabase, consent/time-box — **not this sequence**.
+- First public channel: marketing site + Android APK; Play Store later.
+- Public ship requires D-029 secrets/RLS/client-bundle review.
+
+### 2026-07-28 (exit — Phase N + Phase C)
+
+- Founder smoke OK: Home → Hospitals; nearby list + map; preferred persist; cashless deep links; hospital name search (local filter + Mapbox v10 autocomplete).
+- Phase N (D-024) and Phase C (D-025) marked complete.
+
+### 2026-07-28 (fix — hospital search “Mau” / Mauli)
+
+- Client: instant local substring filter on nearby list merged with remote Mapbox hits.
+- Edge `nearby-hospitals` v10: `auto_complete=true`, `poi_category=hospital,clinic,pharmacy`.
 
 ### 2026-07-28 (fix — hospital search Mapbox 502)
 
@@ -167,9 +392,12 @@ Agents: read this file at the start of every session. Update it when phase/slice
 Continue HealthShield. Read docs/PROGRESS.md, docs/DECISIONS.md, docs/ROADMAP.md first.
 
 Context:
-- Phase C (D-025): /hospitals hub + insurer cashless deep links shipped; smoke pending.
-- Phase N (D-024): Mapbox nearby still needs MAPBOX secrets + Android smoke.
+- Active: Phase 6 thin doctor visit portal (D-035). Production APK smoked but **not public**. Do not publish site/ download. Do not reuse family share as doctor access.
+- Do not publish site/ or an APK until D-029 is recorded PASS.
+- Medical-record OCR is cancelled — do not rebuild without a new decision.
+- Doctor portal is architecture-only (D-027) — do not build without a new enter decision.
+- Claims copy must never say we file claims or guarantee payouts.
 - Do not scrape insurer networks or claim verified cashless.
 
-Do not start Phase 5+ or parked items without a new decision.
+Do not start Play Store / record OCR / public APK without a new decision (and D-029 PASS or a public-ship waiver for APK/site).
 ```

@@ -6,6 +6,7 @@ import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { SelectChip } from '@/components/chip';
+import { EmptyState } from '@/components/empty-state';
 import {
   HospitalsMap,
   type HospitalsMapMarker,
@@ -543,6 +544,15 @@ export default function HospitalsHubScreen() {
         />
       </View>
 
+      {error ? (
+        <Card variant="muted" style={styles.noticeRow}>
+          <Ionicons name="alert-circle" size={18} color={theme.danger} />
+          <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
+            {error}
+          </ThemedText>
+        </Card>
+      ) : null}
+
       {segment === 'nearby' || segment === 'preferred' ? (
         <Card style={styles.sectionCard}>
           <TextField
@@ -732,7 +742,8 @@ export default function HospitalsHubScreen() {
 
           {!loadingNearby && nearby.length === 0 && !permissionHint && !error ? (
             <ThemedText type="small" themeColor="textSecondary">
-              No hospitals loaded yet.
+              No hospitals in this list yet. Allow location and tap Refresh, or search a hospital
+              name.
             </ThemedText>
           ) : null}
 
@@ -770,7 +781,7 @@ export default function HospitalsHubScreen() {
           ) : preferredFiltered.length === 0 ? (
             <ThemedText type="small" themeColor="textSecondary">
               {preferred.length === 0
-                ? 'None yet. Mark hospitals from Nearby or the map.'
+                ? 'None yet. Star a hospital from Nearby or the map — preferred stays even if location is off.'
                 : 'No preferred hospitals match this filter.'}
             </ThemedText>
           ) : (
@@ -806,19 +817,18 @@ export default function HospitalsHubScreen() {
               Loading policies…
             </ThemedText>
           ) : cashlessLinks.length === 0 ? (
-            <View style={styles.emptyCashless}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Add a health policy first, then return here to open that insurer’s official network
-                hospital tool.
-              </ThemedText>
+            <EmptyState
+              icon="link"
+              tint="blue"
+              title="No policy to match yet"
+              message="Add a health policy, then return here to open that insurer’s official network tool. HealthShield does not verify cashless empanelment.">
               <Button
                 label="Add policy"
                 icon="add-circle"
                 variant="secondary"
-                size="md"
                 onPress={() => router.push('/policies/new')}
               />
-            </View>
+            </EmptyState>
           ) : (
             cashlessLinks.map((link) => (
               <View
@@ -859,15 +869,6 @@ export default function HospitalsHubScreen() {
               </View>
             ))
           )}
-        </Card>
-      ) : null}
-
-      {error ? (
-        <Card variant="muted" style={styles.noticeRow}>
-          <Ionicons name="alert-circle" size={18} color={theme.danger} />
-          <ThemedText type="small" themeColor="danger" style={styles.noticeText}>
-            {error}
-          </ThemedText>
         </Card>
       ) : null}
     </Screen>
@@ -991,9 +992,6 @@ const styles = StyleSheet.create({
   },
   selectedActions: {
     gap: Spacing.two,
-  },
-  emptyCashless: {
-    gap: Spacing.three,
   },
   searchActions: {
     flexDirection: 'row',

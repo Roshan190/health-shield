@@ -20,6 +20,18 @@ npx supabase functions deploy extract-policy-fields --project-ref yodcqlkkmqssel
 
 ---
 
+## `ask-document` (Phase Q / D-031, chat deepen D-036)
+
+Chats about **one** owned policy PDF or medical-record file. JWT + Storage. Accepts up to 12 prior session turns as `history` for follow-ups. Explains what the document's wording says about coverage/exclusions (with clause citations); never diagnoses, never promises claim outcomes, refuses off-document questions.
+
+```bash
+npx supabase functions deploy ask-document --project-ref yodcqlkkmqssellzketa
+```
+
+Parked / do not deploy: `extract-record-fields` (Phase R scrapped, D-031). Delete it from the dashboard if it is still live.
+
+---
+
 ## `nearby-hospitals` (Phase N / D-024)
 
 Nearby hospitals via **Mapbox Search Box** (`hospital` / `clinic`). OSM Overpass parked. Not an insurer cashless network.
@@ -38,7 +50,7 @@ Repo source: `supabase/functions/nearby-hospitals/index.ts`
 
 Never commit; never put in Expo `.env`.
 
-### OpenAI (Summarize + Draft from PDF)
+### OpenAI (Summarize + policy PDF draft + document Q&A)
 
 1. [Edge Function secrets](https://supabase.com/dashboard/project/yodcqlkkmqssellzketa/settings/functions)
 2. `OPENAI_API_KEY` = your OpenAI API key

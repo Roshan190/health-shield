@@ -80,6 +80,7 @@ export default function HomeScreen() {
   const [medications, setMedications] = useState<Medication[]>([]);
   const [firstName, setFirstName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const memberById = useMemo(() => {
     const map = new Map<string, FamilyMember>();
@@ -121,6 +122,12 @@ export default function HomeScreen() {
         setMedications(nextMeds);
         const fullName = profileRes.data?.full_name ?? null;
         setFirstName(fullName ? fullName.trim().split(/\s+/)[0] : null);
+        setError(
+          policiesRes.error?.message ??
+            vitalsRes.error?.message ??
+            medsRes.error?.message ??
+            null
+        );
         setLoading(false);
         void resyncAllLocalReminders();
       })();
@@ -175,6 +182,18 @@ export default function HomeScreen() {
         </LinearGradient>
 
         <View style={styles.content}>
+          {error ? (
+            <Card variant="muted" style={styles.trustCard}>
+              <IconBadge icon="cloud-offline" tint="red" size={40} shape="circle" />
+              <View style={styles.trustBody}>
+                <ThemedText type="smallBold">Couldn't refresh Home</ThemedText>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  {error}
+                </ThemedText>
+              </View>
+            </Card>
+          ) : null}
+
           {/* ——— Portfolio stats, overlapping the hero ——— */}
           <Animated.View entering={FadeInDown.duration(400)} style={styles.statsRow}>
             <StatTile
@@ -226,6 +245,19 @@ export default function HomeScreen() {
               </Animated.View>
             ))}
           </View>
+
+          <PressableCard
+            style={styles.claimsLink}
+            onPress={() => router.push('/claims' as never)}>
+            <IconBadge icon="folder-open" tint="amber" size={40} />
+            <View style={styles.claimsLinkBody}>
+              <ThemedText type="smallBold">Claims organizer</ThemedText>
+              <ThemedText type="caption" themeColor="textSecondary">
+                Checklist for a health claim. We do not file with insurers.
+              </ThemedText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
+          </PressableCard>
 
           {/* ——— Health snapshot (slice 2.5) ——— */}
           <SectionHeader
@@ -402,8 +434,8 @@ export default function HomeScreen() {
             <View style={styles.trustBody}>
               <ThemedText type="smallBold">Private by design</ThemedText>
               <ThemedText type="caption" themeColor="textSecondary">
-                Documents are stored in private, access-controlled storage. Only you can see your
-                data.
+                Documents stay in private storage. Only you see them unless you explicitly share an
+                item from Family → Sharing.
               </ThemedText>
             </View>
           </Card>
@@ -535,6 +567,15 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     minHeight: 108,
+  },
+  claimsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  claimsLinkBody: {
+    flex: 1,
+    gap: Spacing.half,
   },
   healthRow: {
     flexDirection: 'row',

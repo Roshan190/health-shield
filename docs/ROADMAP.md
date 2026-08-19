@@ -381,11 +381,127 @@ Foundation MVP is done when all slices 1.1–1.5 meet the above. TestFlight/Play
 
 ---
 
-## Phase 5+ — Claims, doctor portal, premium, enterprise
+## Phase G — General polish (D-026)
 
-Do **not** start early. Blueprint Phases 5–8 stay deferred until a thin cut + override is recorded in `DECISIONS.md`.
+**Entered:** 2026-08-13 after Phase C exit (**D-025**) and sequence lock (**D-026**).
 
-**Recent exits:** Phase 4 AI (**D-020**); household (**D-021**); policy PDF (**D-023**). Phase N (nearby) + Phase C (hub/cashless assist) in progress via **D-024** / **D-025**.
+**Closed:** 2026-08-13 via **D-030** (founder smoke of G1–G3 polish).
+
+**Goal:** Tighten the existing app before more AI. No new features.
+
+### Do
+
+- Copy / disclaimer audit (AI, cashless, SOS — no diagnosis, no verified-cashless, no “we call 112”)
+- Empty / loading / error on core flows (auth, policies, records, family, emergency, hospitals)
+- Leftover navigation, keyboard, and overflow bugs
+- Founder smoke: sign-in → add policy → add record → SOS hub → hospitals hub
+
+### Exit criteria
+
+1. Core loops usable on Android without known ship-blocking UX bugs
+2. No new feature surface; no secrets / real PII in repo
+3. `PROGRESS.md` updated; then enter Phase Q (R cancelled — D-031)
+
+**Deferred:** visual redesign, iOS unpark, Play Store, doctor portal.
+
+---
+
+## Phase R — Medical-record OCR — **cancelled (D-031)**
+
+**Entered:** 2026-08-13 after Phase G exit (**D-030**). **Scrapped** the same day — founder does not want this feature.
+
+Do not implement. Policy PDF draft (D-022) remains. Record OCR stays parked until a new decision.
+
+---
+
+## Phase Q — Document Q&A (D-026 / D-031)
+
+**Entered:** 2026-08-13 after **D-031** (skip R).
+
+**Goal:** Ask questions about **one** owned policy PDF or medical-record file. Grounded answers + disclaimer. Not a general medical chatbot.
+
+### Slice Q1 — Ask about this document
+
+- Entry from policy or record detail (not a new tab)
+- Edge Function loads that file via user JWT; sends to OpenAI; returns an answer
+- Every reply: assistive, may be wrong, not medical or insurance advice
+
+### Exit criteria
+
+1. [x] Q&A works on one saved policy PDF and one record file when `OPENAI_API_KEY` is set
+2. [x] Copy never diagnoses, prescribes, or promises claim outcomes
+3. [x] No secrets in client; `PROGRESS.md` updated
+
+**Closed:** 2026-08-13 via **D-032** (founder smoke).
+
+**Deferred:** vault-wide RAG, doctor chat, claim auto-guidance (Phase 5 is a checklist, not this chat).
+
+---
+
+## Phase 5 thin — Claims assist (D-026 / D-032)
+
+**Entered:** 2026-08-13 after Phase Q exit (**D-032**). Blueprint Phase 5 is ambition; this is the cut.
+
+**Goal:** Help the household **organize** a health-insurance claim — not file it with the insurer.
+
+### Do
+
+- Create a claim tied to a policy
+- Checklist of typical India health-claim documents; link items already in the vault
+- User-set status (e.g. draft / submitted / more-info / settled)
+- Honest copy: HealthShield does not file claims or guarantee payouts
+
+### Exit criteria
+
+1. [x] User can create a claim, tick/link documents, and set status on Android with Supabase persistence
+2. [x] No insurer/TPA API; no payout prediction; no doctor portal
+3. [x] `PROGRESS.md` updated
+
+**Closed:** 2026-08-13 via **D-033** (founder smoke).
+
+**Deferred from blueprint Phase 5–6:** insurer filing, TPA integrations, doctor portal (see D-027), premium, enterprise.
+
+---
+
+## Distribution + security (D-028 / D-029)
+
+**Entered:** 2026-08-13 after Phase 5 exit (**D-033**). Not a product feature phase.
+
+- Static marketing site in `site/` (no keys). Android APK via EAS `production` profile — env on Expo, not in git
+- **D-029 security gate must PASS** before the APK or download page is **public**. Leaked-password is still FAIL (Pro). **D-034:** production APK **build** may proceed anyway; do not publish until PASS or a later public-ship waiver
+- Play Store later; iOS still parked
+
+---
+
+## Doctor portal (D-027 / D-035) — thin visit pack
+
+**Entered:** 2026-08-14 via **D-035** (founder: park unpublished APK; start portal). Architecture from **D-027**.
+
+**Goal:** Patient grants a time-boxed, item-scoped visit pack; a doctor signs in on the web and views only that pack.
+
+### Slice 6.1 — Consent + doctor view
+
+- Schema `visit_consents` + `visit_consent_items` (owner RLS; doctor read via live email match)
+- Patient `/visit` (Profile entry, not a 6th tab): email + duration + pick owned policies/records; revoke
+- `portal/` Next.js: email auth; view-only pack + files
+- Copy: not HealthShield-employed; not a diagnosis; family share is separate
+
+### Exit criteria
+
+1. Patient can grant and revoke a pack on Android with Supabase persistence
+2. Doctor login on `portal/` can read only live consented items (not the rest of the vault)
+3. No secrets in git or `portal/` public env beyond the same anon + URL pattern as the app
+4. `PROGRESS.md` updated
+
+**Deferred:** prescription upload, session notes, clinic admin, verified doctor identity, email invites, public APK.
+
+---
+
+## Phase 5+ remainder — premium, enterprise, full claims APIs
+
+Do **not** start. Still needs a thin cut + override in `DECISIONS.md`.
+
+**Recent exits:** Phase 4 AI (**D-020**); household (**D-021**); policy PDF (**D-023**); nearby hospitals (**D-024**); hospitals hub + cashless assist (**D-025**); document Q&A (**D-032**); thin claims (**D-033**). Distribution APK built (**D-034**) but **not public**. **Now:** thin doctor visit portal (**D-035**).
 
 ---
 
