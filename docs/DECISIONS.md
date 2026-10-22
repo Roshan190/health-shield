@@ -6,6 +6,24 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 ---
 
+## D-041 — GitHub repo public; source-available, not OSS
+
+**Status:** Accepted (2026-10-22) — founder: make `Roshan190/health-shield` public after secrets / PII / license hygiene
+
+**Context:** The GitHub repo was private (D-038). Founder asked to make it public. Blockers: tracked `pdf/dummy.pdf` (password-protected document in `/pdf/`, which is gitignored because it may be real health/insurance PII) and the leftover Expo MIT `LICENSE` covering the whole product.
+
+**Decision:**
+- GitHub visibility **public**: https://github.com/Roshan190/health-shield
+- License: **all rights reserved** (viewing allowed). Not MIT. Not an invitation to use, copy, or ship HealthShield as open-source software.
+- Purge `pdf/dummy.pdf` from git history. It lived only in commit `c7700ad` (`pdf upload`). Keep `/pdf/` gitignored. Local sample PDFs may stay on disk.
+- D-029 secret rules unchanged: no `.env`, APKs, `service_role`, OpenAI `sk-`, or Mapbox `sk.` in git.
+
+**Why:** Founder wants the source visible; HealthShield is a product, not an MIT codebase.
+
+**Consequences:** `main` was force-pushed to drop `c7700ad`. Anyone who already cloned that commit may still have the blob locally. GitHub MIT detection should clear after the `LICENSE` change. Founder still owns OpenAI key rotation (the key that sat on EAS as plaintext) and Mapbox public-token URL restrictions.
+
+---
+
 ## D-040 — Sideload “update available” prompt (not Play, not OTA)
 
 **Status:** Accepted (2026-08-19) — founder queued after D-039; Profile CTA if they dismiss the popup
@@ -63,7 +81,7 @@ Format: **Status** → Context → Decision → Why → Consequences
 
 **Why (founder):** First public distribution on an owned domain; one host (Vercel) for both web apps.
 
-**Consequences:** Agents host `site/` and `portal/` on Vercel and start a **new** production APK. Do not mark D-029 PASS (leaked-password still off). Play Store, iOS, and GitHub Pages stay parked.
+**Consequences:** Agents host `site/` and `portal/` on Vercel and start a **new** production APK. Do not mark D-029 PASS (leaked-password still off). Play Store, iOS, and GitHub Pages stay parked. GitHub visibility is **public** as of D-041 (this decision's "repo is private" line is historical).
 
 ---
 

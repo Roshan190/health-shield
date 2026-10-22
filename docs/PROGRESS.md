@@ -1,9 +1,9 @@
 # Progress
 
-**Last updated:** 2026-08-19 (D-040 — sideload update prompt)  
+**Last updated:** 2026-10-22 (D-041 — GitHub repo public)  
 **Current phase:** Phase 6 thin — Doctor visit portal (D-035 / D-027) + public distribution (D-038)  
-**Active slice:** D-040 in code; next production APK **1.1.1** / `versionCode` 3  
-**Status:** Founder said put it live. Domain `health-shield.in`. Site + portal **deployed on Vercel** (custom domain pending GoDaddy DNS). Leaked-password still **off** (D-037). Email password reset **in code** (D-039); founder must allow-list redirect URLs and smoke. **D-040** sideload “update available” Alert + Profile CTA **in code** (not Play, not OTA). `site/latest.json` is a **release array**; current public APK is still **1.1.0** / `versionCode` 2 until 1.1.1 is published. Play Store still parked (D-028).
+**Active slice:** Public APK **1.1.1** / `versionCode` 3 live on the site (D-039 + D-040 in that binary)  
+**Status:** Founder said put it live. Domain `health-shield.in`. Site + portal **deployed on Vercel**. GitHub repo **public** (D-041; source-available, not OSS). Leaked-password still **off** (D-037). Email password reset **in code** (D-039); founder must allow-list redirect URLs and smoke. **D-040** sideload update prompt is in APK 1.1.1. Public download + `latest.json` point at **1.1.1** (1.1.0 kept in the release array). Play Store still parked (D-028).
 
 Agents: read this file at the start of every session. Update it when phase/slice status changes.
 
@@ -18,6 +18,7 @@ Agents: read this file at the start of every session. Update it when phase/slice
 | Backend | Supabase project `health-shield` (`yodcqlkkmqssellzketa`) |
 | Platform | Mobile-first (Android primary; iOS parked) |
 | Team | Solo |
+| GitHub | Public (D-041) — source-available, not OSS |
 
 ---
 
@@ -58,14 +59,14 @@ Agents: read this file at the start of every session. Update it when phase/slice
 - [x] D3 Founder sideload smoke of production APK
 - [ ] D-029 recorded **PASS** (stays FAIL on leaked-password; D-037 waives that one check for publish)
 - [x] Public host (D-038): Vercel `https://health-shield-flax.vercel.app` + `https://healthshield-portal.vercel.app`; custom domain pending DNS
-- [x] Public APK download on the site (EAS artifact + SHA-256 `26936949f7374ea60c53179fc8bdd9860781c0f16dd650e4b745d00a8d840a40`; APK not in git)
-- [x] D-040 sideload update prompt **in code** (Alert + Profile CTA; skip Expo Go). Needs APK **1.1.1** and a live `site/latest.json`
+- [x] Public APK download on the site (1.1.1 / `versionCode` 3; EAS [e5819432](https://expo.dev/accounts/roshan.shikhare/projects/HealthShield/builds/e5819432-6066-4401-9068-b7d79084bb7d); SHA-256 `73c6fa89b92791113aeafe4c3d502356e03b4effbc49ce72321abf2533f2fb1a`; APK not in git)
+- [x] D-040 sideload update prompt **in APK 1.1.1** (Alert + Profile CTA; skip Expo Go). `site/latest.json` live with 1.1.1 + prior 1.1.0
 
 ### Founder smoke checklist (D3 production APK)
 
 1. [x] Sideload production APK (unknown sources); not Expo Go
 2. [x] Core loops work (founder: everything working up to now)
-3. [x] Public download page — APK 1.1.0 on the marketing site (EAS artifact + SHA-256; domain health-shield.in still pending)
+3. [x] Public download page — APK **1.1.1** on the marketing site (EAS artifact + SHA-256; 1.1.0 kept in `latest.json`)
 
 ### D-029 gate (re-checked 2026-08-19)
 
@@ -231,10 +232,10 @@ Agents: read this file at the start of every session. Update it when phase/slice
 
 ## Next actions (priority order)
 
-1. Finish D-038 hosts: Vercel `site/` → health-shield.in and Vercel `portal/` → portal.health-shield.in + GoDaddy DNS
-2. EAS production APK **1.1.1** (`versionCode` 3) with `EXPO_PUBLIC_DOCTOR_PORTAL_URL=https://portal.health-shield.in` (includes D-039 reset + D-040 checker). After it exists, update `site/index.html` **and prepend** that release to `site/latest.json` (`version` 1.1.1 / `versionCode` 3); keep 1.1.0 in the array
-3. Founder smoke 6.1 against **production** portal: grant pack → doctor signs in → revoke hides it
-4. Founder smoke D-039 redirect allow-list + password reset (APK/dev client, not Expo Go)
+1. Finish D-038 hosts: Vercel `site/` → health-shield.in and Vercel `portal/` → portal.health-shield.in + GoDaddy DNS (if still pending)
+2. Founder smoke 6.1 against **production** portal: grant pack → doctor signs in → revoke hides it
+3. Founder smoke D-039 redirect allow-list + password reset (APK 1.1.1 / dev client, not Expo Go)
+4. Founder smoke D-040: install 1.1.1, then temporarily a higher `versionCode` in `latest.json` should prompt; Later still leaves Profile Get update
 5. Rotate the OpenAI API key (it was on EAS in plaintext). Put the new value only on Edge Function secrets as `OPENAI_API_KEY`.
 6. Parked: Play Store, record OCR, email invites, cashless scrape/APIs, leaked-password (D-037 until revenue)
 
@@ -258,12 +259,24 @@ Agents: read this file at the start of every session. Update it when phase/slice
 
 ## Done log (recent)
 
+### 2026-10-22 (D-041 — GitHub repo public)
+
+- Recorded **D-041**. GitHub `Roshan190/health-shield` is **public**, source-available, all rights reserved (not MIT / not OSS).
+- Purged `pdf/dummy.pdf` from git history (it was only in `c7700ad`; `/pdf/` stays gitignored). Local copy may remain on disk.
+- Replaced Expo leftover MIT `LICENSE` with HealthShield proprietary terms. README states viewing is allowed, reuse is not.
+
+### 2026-08-20 (public APK 1.1.1)
+
+- EAS production Android APK **FINISHED** [e5819432](https://expo.dev/accounts/roshan.shikhare/projects/HealthShield/builds/e5819432-6066-4401-9068-b7d79084bb7d) — app **1.1.1** / `versionCode` 3 (D-039 password reset + D-040 sideload checker). Artifact not in git.
+- SHA-256 `73c6fa89b92791113aeafe4c3d502356e03b4effbc49ce72321abf2533f2fb1a`. Secret scan of text-ish files: no `service_role` / OpenAI `sk-` / Mapbox `sk.`.
+- `site/index.html` download + `site/latest.json` prepend 1.1.1; keep 1.1.0 in the array. People on 1.1.0 still update from the site (that APK has no checker).
+- 2026-08-20: redeployed `site/` — `https://health-shield.in/latest.json` now lists 1.1.1 first.
+
 ### 2026-08-19 (D-040 — sideload update prompt)
 
 - Recorded **D-040**. Public `site/latest.json` (JSON **array** of `version` / `versionCode` / APK URL / SHA-256 / download page). Android APK/dev-client fetches it, compares the **highest `versionCode`**, shows a dismissible **“Update available — please update”** Alert, and keeps a **Get update** CTA on Profile after Later. Opens `https://health-shield.in/#download`. Skip Expo Go / iOS / web. Not Play in-app updates, not `expo-updates` OTA, not a force-block.
-- Bumped app to **1.1.1** / Android `versionCode` 3. `latest.json` is a release array still headed by public **1.1.0** / `versionCode` 2 until the 1.1.1 APK is published — then update `index.html` and **prepend** to `latest.json`.
-- **Founder:** next production APK is 1.1.1. People on 1.1.0 will not see the in-app prompt (that binary has no checker).
-- 2026-08-19: redeployed `site/` so `https://health-shield.in/latest.json` is a live **release array** (currently one row: public 1.1.0).
+- Bumped app to **1.1.1** / Android `versionCode` 3. Public ship of that APK is 2026-08-20.
+- 2026-08-19: redeployed `site/` so `https://health-shield.in/latest.json` is a live **release array**.
 
 ### 2026-08-19 (D-039 — email password reset)
 
